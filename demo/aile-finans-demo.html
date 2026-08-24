@@ -1,0 +1,1472 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Aile Finans &amp; Varlık Yönetimi — Örnek Ekran</title>
+<!-- Not: Grafikler harici bir kütüphaneye bağımlı olmadan, saf SVG + vanilla JS ile
+     çiziliyor -- ağ erişimi olmayan ortamlarda da güvenilir şekilde açılsın diye. -->
+<style>
+  :root{
+    color-scheme: light;
+    --page:            #f9f9f7;
+    --surface:         #fcfcfb;
+    --surface-raised:  #ffffff;
+    --text-primary:    #0b0b0b;
+    --text-secondary:  #52514e;
+    --text-muted:      #898781;
+    --grid:            #e1e0d9;
+    --baseline:        #c3c2b7;
+    --border:          rgba(11,11,11,0.10);
+    --good:            #0ca30c;
+    --good-text:       #006300;
+    --critical:        #d03b3b;
+    --warning:         #fab219;
+    --series-1:        #2a78d6; /* mavi */
+    --series-2:        #eb6834; /* turuncu */
+    --series-3:        #1baf7a; /* aqua */
+    --series-4:        #eda100; /* sari */
+    --shadow: 0 1px 2px rgba(11,11,11,0.04), 0 6px 20px rgba(11,11,11,0.06);
+  }
+  [data-theme="dark"]{
+    color-scheme: dark;
+    --page:            #0d0d0d;
+    --surface:         #1a1a19;
+    --surface-raised:  #212120;
+    --text-primary:    #ffffff;
+    --text-secondary:  #c3c2b7;
+    --text-muted:      #898781;
+    --grid:            #2c2c2a;
+    --baseline:        #383835;
+    --border:          rgba(255,255,255,0.10);
+    --good:            #0ca30c;
+    --good-text:       #0ca30c;
+    --critical:        #e66767;
+    --warning:         #fab219;
+    --series-1:        #3987e5;
+    --series-2:        #d95926;
+    --series-3:        #199e70;
+    --series-4:        #c98500;
+    --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 10px 30px rgba(0,0,0,0.35);
+  }
+
+  *{ box-sizing:border-box; }
+  html,body{ height:100%; }
+  body{
+    margin:0;
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    background: var(--page);
+    color: var(--text-primary);
+    -webkit-font-smoothing: antialiased;
+  }
+  a{ color:inherit; }
+
+  .app{ display:flex; min-height:100vh; }
+
+  /* ---------- Sidebar ---------- */
+  .sidebar{
+    width: 236px;
+    flex-shrink:0;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    padding: 20px 14px;
+    display:flex;
+    flex-direction:column;
+    gap: 4px;
+  }
+  .brand{
+    display:flex; align-items:center; gap:10px;
+    padding: 6px 10px 20px 10px;
+  }
+  .brand-mark{
+    width:34px; height:34px; border-radius:10px;
+    background: linear-gradient(135deg, var(--series-1), var(--series-3));
+    display:flex; align-items:center; justify-content:center;
+    color:#fff; font-weight:700; font-size:15px;
+    flex-shrink:0;
+  }
+  .brand-name{ font-weight:700; font-size:14.5px; line-height:1.25; }
+  .brand-sub{ font-size:11px; color:var(--text-muted); }
+
+  .nav-item{
+    display:flex; align-items:center; gap:10px;
+    padding:9px 12px; border-radius:9px;
+    font-size:13.5px; font-weight:500; color: var(--text-secondary);
+    cursor:pointer; user-select:none;
+    border:1px solid transparent;
+  }
+  .nav-item:hover{ background: var(--surface-raised); }
+  .nav-item.active{
+    background: var(--surface-raised);
+    color: var(--text-primary);
+    border-color: var(--border);
+    box-shadow: var(--shadow);
+  }
+  .nav-icon{ width:18px; text-align:center; font-size:14px; }
+  .nav-sep{ height:1px; background:var(--border); margin:10px 4px; }
+  .nav-label{ font-size:11px; text-transform:uppercase; letter-spacing:.04em; color:var(--text-muted); padding:10px 12px 4px; }
+
+  .sidebar-foot{
+    margin-top:auto; padding:12px 10px; font-size:11px; color:var(--text-muted);
+    border-top:1px solid var(--border);
+  }
+
+  /* ---------- Main ---------- */
+  .main{ flex:1; min-width:0; display:flex; flex-direction:column; }
+  .topbar{
+    display:flex; align-items:center; justify-content:space-between;
+    padding: 16px 28px; border-bottom:1px solid var(--border);
+    background: var(--surface);
+    position:sticky; top:0; z-index:5;
+  }
+  .topbar-title{ font-size:17px; font-weight:700; }
+  .topbar-sub{ font-size:12px; color:var(--text-muted); margin-top:2px; }
+  .topbar-right{ display:flex; align-items:center; gap:10px; }
+
+  .mock-badge{
+    font-size:11px; font-weight:600; color: var(--series-2);
+    background: color-mix(in srgb, var(--series-2) 14%, transparent);
+    border:1px solid color-mix(in srgb, var(--series-2) 30%, transparent);
+    padding:4px 9px; border-radius:999px;
+  }
+  .icon-btn{
+    width:32px; height:32px; border-radius:8px; border:1px solid var(--border);
+    background:var(--surface-raised); color:var(--text-secondary);
+    display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:14px;
+  }
+  .avatar{
+    width:32px; height:32px; border-radius:50%; background: var(--series-1);
+    color:#fff; display:flex; align-items:center; justify-content:center; font-size:12.5px; font-weight:700;
+  }
+
+  .content{ padding: 22px 28px 60px; max-width:1180px; width:100%; margin:0 auto; }
+  .panel{ display:none; }
+  .panel.active{ display:block; animation: fadein .18s ease; }
+  @keyframes fadein{ from{opacity:0; transform:translateY(3px);} to{opacity:1; transform:none;} }
+
+  .section-title{ font-size:14.5px; font-weight:700; margin: 26px 0 12px; display:flex; align-items:center; gap:8px; }
+  .section-title:first-child{ margin-top:0; }
+  .section-hint{ font-size:12px; font-weight:400; color:var(--text-muted); }
+  .section-header-row{ display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin: 26px 0 12px; }
+  .section-header-row:first-child{ margin-top:0; }
+  .section-header-row .section-title{ margin:0; }
+
+  /* ---------- Cards / grid ---------- */
+  .grid{ display:grid; gap:14px; }
+  .grid-4{ grid-template-columns: repeat(4, 1fr); }
+  .grid-2{ grid-template-columns: 1.4fr 1fr; }
+  .grid-3{ grid-template-columns: repeat(3, 1fr); }
+  @media (max-width: 980px){ .grid-4{grid-template-columns:repeat(2,1fr);} .grid-2{grid-template-columns:1fr;} .grid-3{grid-template-columns:1fr;} }
+
+  .card{
+    background: var(--surface);
+    border:1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px 18px;
+    box-shadow: var(--shadow);
+  }
+  .card-flat{ box-shadow:none; }
+
+  .stat-label{ font-size:12px; color:var(--text-muted); font-weight:600; display:flex; align-items:center; gap:6px; }
+  .stat-value{ font-size:22px; font-weight:700; margin-top:6px; font-variant-numeric: tabular-nums; }
+  .stat-delta{ font-size:12px; margin-top:6px; font-weight:600; display:flex; align-items:center; gap:4px; }
+  .stat-delta.up{ color: var(--good-text); }
+  .stat-delta.down{ color: var(--critical); }
+
+  .account-card{ display:flex; align-items:center; gap:12px; position:relative; }
+  .account-icon{
+    width:42px; height:42px; border-radius:11px; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center; font-size:16px; color:#fff; font-weight:700;
+  }
+  .account-name{ font-weight:600; font-size:13.5px; }
+  .account-bank{ font-size:11.5px; color:var(--text-muted); }
+  .account-balance{ margin-left:auto; text-align:right; font-variant-numeric: tabular-nums; }
+  .account-balance .amt{ font-weight:700; font-size:14.5px; }
+  .account-balance.negative .amt{ color: var(--critical); }
+  .account-iban{ font-size:11px; color:var(--text-muted); margin-top:1px; }
+
+  table{ width:100%; border-collapse:collapse; font-size:13px; }
+  th{ text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:.03em; color:var(--text-muted); font-weight:600; padding:8px 10px; border-bottom:1px solid var(--grid); }
+  td{ padding:10px 10px; border-bottom:1px solid var(--grid); vertical-align:middle; }
+  tr:last-child td{ border-bottom:none; }
+  td.num, th.num{ text-align:right; font-variant-numeric: tabular-nums; }
+  .pill{ display:inline-flex; align-items:center; gap:5px; padding:3px 9px; border-radius:999px; font-size:11.5px; font-weight:600; }
+  .pill.good{ color:var(--good-text); background: color-mix(in srgb, var(--good) 14%, transparent); }
+  .pill.bad{ color:var(--critical); background: color-mix(in srgb, var(--critical) 14%, transparent); }
+  .asset-tag{ display:inline-flex; align-items:center; gap:7px; font-weight:600; }
+  .dot{ width:9px; height:9px; border-radius:50%; flex-shrink:0; }
+
+  .tabs{ display:inline-flex; gap:2px; background:var(--page); border:1px solid var(--border); border-radius:10px; padding:3px; }
+  .tab-btn{
+    border:none; background:transparent; color:var(--text-secondary); font-size:12.5px; font-weight:600;
+    padding:6px 13px; border-radius:8px; cursor:pointer;
+  }
+  .tab-btn.active{ background:var(--surface-raised); color:var(--text-primary); box-shadow:var(--shadow); }
+
+  .progress-row{ margin-bottom:14px; }
+  .progress-row:last-child{ margin-bottom:0; }
+  .progress-top{ display:flex; justify-content:space-between; font-size:12.5px; margin-bottom:6px; }
+  .progress-top .cat{ font-weight:600; }
+  .progress-top .vals{ color:var(--text-muted); font-variant-numeric: tabular-nums; }
+  .progress-track{ height:7px; border-radius:99px; background:var(--grid); overflow:hidden; }
+  .progress-fill{ height:100%; border-radius:99px; background:var(--series-1); }
+  .progress-fill.over{ background:var(--critical); }
+  .progress-fill.undefined-budget{ background:var(--text-muted); }
+
+  .legend-row{ display:flex; align-items:center; gap:8px; font-size:12.5px; padding:5px 0; }
+  .legend-row .lbl{ flex:1; color:var(--text-secondary); }
+  .legend-row .val{ font-weight:700; font-variant-numeric: tabular-nums; }
+  .legend-row .pct{ color:var(--text-muted); font-size:11.5px; width:42px; text-align:right; }
+
+  /* ---------- Zekat ---------- */
+  .zakat-hero{
+    display:flex; align-items:center; justify-content:space-between; gap:20px; flex-wrap:wrap;
+    background: linear-gradient(135deg, color-mix(in srgb, var(--series-3) 12%, var(--surface)), var(--surface));
+  }
+  .zakat-hero-value{ font-size:34px; font-weight:800; color: var(--series-3); font-variant-numeric: tabular-nums; }
+  .zakat-hero-label{ font-size:12.5px; color:var(--text-muted); font-weight:600; margin-bottom:4px; }
+  .zakat-badges{ display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+  .badge{ font-size:11.5px; font-weight:700; padding:5px 10px; border-radius:999px; display:inline-flex; align-items:center; gap:5px; }
+  .badge.ok{ background: color-mix(in srgb, var(--good) 15%, transparent); color: var(--good-text); }
+  .badge.warn{ background: color-mix(in srgb, var(--warning) 22%, transparent); color:#8a5a00; }
+  [data-theme="dark"] .badge.warn{ color:#ffcf6b; }
+
+  .toggle-row{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:11px 0; border-bottom:1px solid var(--grid); }
+  .toggle-row:last-child{ border-bottom:none; }
+  .toggle-text .t1{ font-size:13px; font-weight:600; }
+  .toggle-text .t2{ font-size:11.5px; color:var(--text-muted); margin-top:1px; }
+  .switch{ position:relative; width:38px; height:22px; flex-shrink:0; cursor:pointer; }
+  .switch input{ opacity:0; width:0; height:0; }
+  .slider{ position:absolute; inset:0; background:var(--baseline); border-radius:99px; cursor:pointer; transition:.15s; }
+  .slider:before{ content:""; position:absolute; width:16px; height:16px; left:3px; top:3px; background:#fff; border-radius:50%; transition:.15s; }
+  input:checked + .slider{ background: var(--series-3); }
+  input:checked + .slider:before{ transform: translateX(16px); }
+  .switch.sm{ width:32px; height:19px; }
+  .switch.sm .slider:before{ width:13px; height:13px; }
+  .switch.sm input:checked + .slider:before{ transform: translateX(13px); }
+
+  .footnote{ font-size:11.5px; color:var(--text-muted); line-height:1.6; margin-top:18px; padding-top:14px; border-top:1px solid var(--border); }
+
+  .chart-wrap{ position:relative; height:230px; }
+  .chart-wrap.tall{ height:270px; }
+  .chart-wrap.donut{ height:200px; max-width:200px; margin:0 auto; }
+  .chart-wrap svg{ display:block; overflow:visible; }
+  .schart-axis-label{ font-size:9.5px; fill:var(--text-muted); font-family:inherit; }
+  .schart-bar{ cursor:pointer; transition:opacity .1s; }
+  .donut-center-value{ font-size:15px; font-weight:700; fill:var(--text-primary); font-family:inherit; }
+  .donut-center-label{ font-size:9.5px; fill:var(--text-muted); font-family:inherit; }
+  .donut-seg{ cursor:pointer; }
+
+  .chart-tooltip{
+    position:fixed; pointer-events:none; z-index:80; opacity:0;
+    background:var(--surface-raised); border:1px solid var(--border); box-shadow:var(--shadow);
+    padding:6px 10px; border-radius:8px; font-size:12px; line-height:1.4; color:var(--text-primary);
+    transform:translate(-50%,-130%); white-space:nowrap; transition:opacity .1s ease;
+  }
+  .chart-tooltip b{ font-weight:700; }
+
+  /* ---------- Forms / buttons / CRUD ---------- */
+  .btn{
+    font-size:12.5px; font-weight:600; padding:8px 14px; border-radius:8px;
+    border:1px solid var(--border); background:var(--surface-raised); color:var(--text-primary);
+    cursor:pointer; display:inline-flex; align-items:center; gap:6px; white-space:nowrap;
+  }
+  .btn:hover{ background:var(--page); }
+  .btn-primary{ background:var(--series-1); border-color:var(--series-1); color:#fff; }
+  .btn-primary:hover{ filter:brightness(1.06); }
+  .btn-ghost{ background:transparent; border:1px dashed var(--baseline); color:var(--text-secondary); }
+  .btn-sm{ padding:6px 11px; font-size:11.5px; }
+  .btn-danger-text{ color:var(--critical); }
+
+  .row-remove{
+    width:24px; height:24px; border-radius:7px; border:none; background:transparent;
+    color:var(--text-muted); cursor:pointer; font-size:13px; display:inline-flex;
+    align-items:center; justify-content:center; flex-shrink:0;
+  }
+  .row-remove:hover{ background: color-mix(in srgb, var(--critical) 14%, transparent); color:var(--critical); }
+  .account-card .row-remove{ position:absolute; top:8px; right:8px; }
+
+  .add-form{ display:none; margin-top:12px; padding:14px; border:1px dashed var(--baseline); border-radius:12px; background:var(--page); }
+  .add-form.open{ display:block; }
+  .form-grid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(130px,1fr)); gap:10px; margin-bottom:12px; }
+  .form-field label{ font-size:11px; color:var(--text-muted); font-weight:600; display:block; margin-bottom:4px; }
+  .form-field input, .form-field select{
+    width:100%; padding:8px 10px; border-radius:7px; border:1px solid var(--border);
+    background:var(--surface-raised); color:var(--text-primary); font-size:12.5px; font-family:inherit;
+  }
+  .form-actions{ display:flex; gap:8px; }
+  .seg{ display:inline-flex; border:1px solid var(--border); border-radius:8px; overflow:hidden; }
+  .seg button{ border:none; background:var(--surface-raised); color:var(--text-secondary); font-size:12px; font-weight:600; padding:7px 14px; cursor:pointer; }
+  .seg button.active.income{ background:var(--good); color:#fff; }
+  .seg button.active.expense{ background:var(--series-2); color:#fff; }
+
+  .asset-group{ margin-bottom:14px; border:1px solid var(--border); border-radius:12px; overflow:hidden; }
+  .asset-group-head{ display:flex; align-items:center; gap:12px; padding:12px 14px; background:var(--page); flex-wrap:wrap; }
+  .asset-group-head .ag-name{ font-weight:700; font-size:13.5px; display:flex; align-items:center; gap:8px; }
+  .asset-group-head .ag-stats{ margin-left:auto; display:flex; gap:20px; text-align:right; }
+  .ag-stat-label{ font-size:10px; color:var(--text-muted); }
+  .ag-stat-value{ font-size:12.5px; font-weight:700; font-variant-numeric:tabular-nums; }
+  .ag-body{ padding:6px 14px 14px; }
+
+  .list-row{ display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid var(--grid); }
+  .list-row:last-child{ border-bottom:none; }
+  .list-row-main{ flex:1; min-width:0; }
+  .list-row-title{ font-weight:600; font-size:12.5px; }
+  .list-row-sub{ font-size:11px; color:var(--text-muted); margin-top:1px; }
+  .list-row-val{ font-weight:700; font-size:13px; font-variant-numeric:tabular-nums; text-align:right; white-space:nowrap; }
+
+  ::-webkit-scrollbar{ width:10px; height:10px; }
+  ::-webkit-scrollbar-thumb{ background:var(--baseline); border-radius:99px; }
+</style>
+</head>
+<body data-theme="light">
+<div class="app">
+
+  <!-- ============ SIDEBAR ============ -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">AF</div>
+      <div>
+        <div class="brand-name">Aile Finans</div>
+        <div class="brand-sub">Varlık Yönetimi</div>
+      </div>
+    </div>
+
+    <div class="nav-item active" data-tab="genel"><span class="nav-icon">◆</span> Genel Bakış</div>
+    <div class="nav-item" data-tab="hesaplar"><span class="nav-icon">▤</span> Hesaplar</div>
+    <div class="nav-item" data-tab="butce"><span class="nav-icon">◔</span> Bütçe</div>
+    <div class="nav-item" data-tab="portfoy"><span class="nav-icon">▲</span> Portföy</div>
+    <div class="nav-item" data-tab="zekat"><span class="nav-icon">✦</span> Zekât</div>
+
+    <div class="sidebar-foot">
+      Taylan Ailesi · TRY<br/>
+      Son güncelleme: 23 Ağu 2026, 21:40
+    </div>
+  </aside>
+
+  <!-- ============ MAIN ============ -->
+  <div class="main">
+    <div class="topbar">
+      <div>
+        <div class="topbar-title" id="topbar-title">Genel Bakış</div>
+        <div class="topbar-sub" id="topbar-sub">Tüm hesap ve varlıkların özeti</div>
+      </div>
+      <div class="topbar-right">
+        <span class="mock-badge">● Örnek veri — ekle/çıkar canlı çalışır</span>
+        <button class="icon-btn" id="theme-toggle" title="Tema değiştir">☾</button>
+        <div class="avatar">BT</div>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- ============ GENEL BAKIŞ ============ -->
+      <section class="panel active" id="panel-genel">
+        <div class="grid grid-4" id="overview-stats"></div>
+
+        <div class="grid grid-2" style="margin-top:14px;">
+          <div class="card">
+            <div class="stat-label" style="margin-bottom:8px;">Portföy Değeri — Son 12 Ay</div>
+            <div class="chart-wrap" id="chart-overview-portfolio"></div>
+          </div>
+          <div class="card">
+            <div class="stat-label" style="margin-bottom:10px;">Zekât Durumu</div>
+            <div style="font-size:26px; font-weight:800; color:var(--series-3);" id="overview-zakat-amount">₺36.996</div>
+            <div style="font-size:12px; color:var(--text-muted); margin-bottom:12px;">2026 yılı için hesaplanan zekât tutarı</div>
+            <div class="zakat-badges" id="overview-zakat-badges"></div>
+            <div style="font-size:11.5px; color:var(--text-muted); margin-top:14px;">Detaylı döküm için <b>Zekât</b> sekmesine bakın.</div>
+          </div>
+        </div>
+
+        <div class="section-title">Hesap Özeti <span class="section-hint" id="overview-accounts-hint"></span></div>
+        <div class="grid grid-4" id="overview-accounts"></div>
+      </section>
+
+      <!-- ============ HESAPLAR ============ -->
+      <section class="panel" id="panel-hesaplar">
+        <div class="card" style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; flex-wrap:wrap; gap:10px;">
+          <div>
+            <div class="stat-label">Toplam Likit Bakiye (yatırım/BES hariç)</div>
+            <div class="stat-value" style="font-size:26px;" id="accounts-total-liquid">₺231.849,75</div>
+          </div>
+          <div style="display:flex; align-items:center; gap:14px;">
+            <div style="text-align:right; font-size:12px; color:var(--text-muted);" id="accounts-summary-hint">5 hesap · 4 banka<br/>tek ekranda birleştirildi</div>
+            <button class="btn btn-primary" onclick="toggleForm('account-add-form')">+ Hesap Ekle</button>
+          </div>
+        </div>
+
+        <div class="add-form" id="account-add-form">
+          <div class="form-grid">
+            <div class="form-field"><label>Hesap Adı</label><input id="af-name" placeholder="örn. Serbest Hesap" /></div>
+            <div class="form-field"><label>Banka / Kurum</label><input id="af-bank" placeholder="örn. Denizbank" /></div>
+            <div class="form-field"><label>Hesap Türü</label>
+              <select id="af-type">
+                <option value="checking">Vadesiz Hesap</option>
+                <option value="savings">Birikim Hesabı</option>
+                <option value="credit_card">Kredi Kartı</option>
+                <option value="cash">Nakit</option>
+                <option value="investment">Yatırım Hesabı</option>
+              </select>
+            </div>
+            <div class="form-field"><label>Bakiye (₺)</label><input id="af-balance" type="number" step="0.01" placeholder="0,00" /></div>
+            <div class="form-field" id="af-limit-field" style="display:none;"><label>Kart Limiti (₺)</label><input id="af-limit" type="number" step="0.01" placeholder="0,00" /></div>
+          </div>
+          <div class="form-actions">
+            <button class="btn btn-primary btn-sm" onclick="addAccount()">Ekle</button>
+            <button class="btn btn-sm" onclick="toggleForm('account-add-form')">Vazgeç</button>
+          </div>
+        </div>
+
+        <div class="grid grid-2" id="accounts-list" style="grid-template-columns:1fr 1fr; margin-top:14px;"></div>
+      </section>
+
+      <!-- ============ BÜTÇE ============ -->
+      <section class="panel" id="panel-butce">
+        <div class="grid grid-2">
+          <div class="card">
+            <div class="stat-label" style="margin-bottom:2px;">Gelir / Gider — Son 6 Ay</div>
+            <div style="display:flex; gap:14px; margin-bottom:8px;">
+              <span style="font-size:11.5px; color:var(--text-secondary); display:flex; align-items:center; gap:5px;"><span class="dot" style="background:var(--series-1)"></span>Gelir</span>
+              <span style="font-size:11.5px; color:var(--text-secondary); display:flex; align-items:center; gap:5px;"><span class="dot" style="background:var(--series-2)"></span>Gider</span>
+            </div>
+            <div class="chart-wrap tall" id="chart-budget-bars"></div>
+          </div>
+          <div class="card">
+            <div class="stat-label" style="margin-bottom:6px;">Ağustos 2026 — Kategori Bazlı Takip</div>
+            <div id="budget-progress" style="margin-top:12px;"></div>
+          </div>
+        </div>
+
+        <div class="section-header-row">
+          <div class="section-title">İşlemler <span class="section-hint">— gelir/gider kalemi ekleyin veya silin</span></div>
+          <button class="btn btn-primary" onclick="toggleForm('budget-add-form')">+ Kalem Ekle</button>
+        </div>
+
+        <div class="add-form" id="budget-add-form" style="margin-top:0;">
+          <div style="margin-bottom:10px;">
+            <div class="seg" id="bf-kind">
+              <button type="button" class="active income" data-kind="income" onclick="setBudgetKind('income')">Gelir</button>
+              <button type="button" data-kind="expense" onclick="setBudgetKind('expense')">Gider</button>
+            </div>
+          </div>
+          <div class="form-grid">
+            <div class="form-field"><label>Açıklama</label><input id="bf-desc" placeholder="örn. Market alışverişi" /></div>
+            <div class="form-field"><label>Kategori</label><input id="bf-category" list="bf-category-list" placeholder="örn. Market / Gıda" /><datalist id="bf-category-list"></datalist></div>
+            <div class="form-field"><label>Tutar (₺)</label><input id="bf-amount" type="number" step="0.01" placeholder="0,00" /></div>
+          </div>
+          <div class="form-actions">
+            <button class="btn btn-primary btn-sm" onclick="addBudgetTx()">Ekle</button>
+            <button class="btn btn-sm" onclick="toggleForm('budget-add-form')">Vazgeç</button>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:14px;">
+          <div id="budget-tx-list"></div>
+        </div>
+      </section>
+
+      <!-- ============ PORTFÖY ============ -->
+      <section class="panel" id="panel-portfoy">
+        <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
+          <div>
+            <div class="stat-value" id="portfolio-value" style="font-size:26px;">₺1.060.000</div>
+            <div class="stat-delta up" id="portfolio-delta">▲ seçili dönem</div>
+          </div>
+          <div class="tabs" id="period-tabs">
+            <button class="tab-btn" data-period="1m">1 Ay</button>
+            <button class="tab-btn" data-period="3m">3 Ay</button>
+            <button class="tab-btn" data-period="6m">6 Ay</button>
+            <button class="tab-btn" data-period="9m">9 Ay</button>
+            <button class="tab-btn active" data-period="12m">12 Ay</button>
+          </div>
+        </div>
+
+        <div class="grid grid-2" style="margin-top:14px;">
+          <div class="card">
+            <div class="chart-wrap tall" id="chart-portfolio-line"></div>
+          </div>
+          <div class="card">
+            <div class="stat-label" style="margin-bottom:4px;">Varlık Türü Dağılımı</div>
+            <div class="chart-wrap donut" id="chart-portfolio-donut"></div>
+            <div id="donut-legend" style="margin-top:6px;"></div>
+            <div style="border-top:1px solid var(--grid); margin-top:10px; padding-top:10px;">
+              <div class="legend-row"><span class="dot" style="background:var(--series-4)"></span><span class="lbl">BES (Bireysel Emeklilik)</span><span class="val" id="bes-mini-value">₺17.094</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-header-row">
+          <div class="section-title">Pozisyonlar <span class="section-hint">— her alım işlemi ayrı satırda, kâr/zarar alım bazında hesaplanır</span></div>
+          <button class="btn btn-primary" onclick="toggleForm('asset-add-form')">+ Yeni Varlık / Fon Ekle</button>
+        </div>
+
+        <div class="add-form" id="asset-add-form">
+          <div class="form-grid">
+            <div class="form-field"><label>Varlık Türü</label>
+              <select id="ag-class" onchange="onAssetClassChange()">
+                <option value="gold">Altın</option>
+                <option value="currency">Döviz</option>
+                <option value="tefas">TEFAS Fonu</option>
+              </select>
+            </div>
+            <div class="form-field" id="ag-name-field"><label>Kod / Fon Adı</label><input id="ag-name" placeholder="örn. GBP veya Fon Adı" /></div>
+            <div class="form-field"><label>Güncel Fiyat (₺)</label><input id="ag-price" type="number" step="0.0001" placeholder="0,00" /></div>
+            <div class="form-field"><label>İlk Alım Tarihi</label><input id="ag-date" type="date" value="2026-08-23" /></div>
+            <div class="form-field"><label>Miktar</label><input id="ag-qty" type="number" step="0.0001" placeholder="0" /></div>
+            <div class="form-field"><label>Alım Birim Fiyatı (₺)</label><input id="ag-cost" type="number" step="0.0001" placeholder="0,00" /></div>
+          </div>
+          <div class="form-actions">
+            <button class="btn btn-primary btn-sm" onclick="addAssetGroup()">Ekle</button>
+            <button class="btn btn-sm" onclick="toggleForm('asset-add-form')">Vazgeç</button>
+          </div>
+        </div>
+
+        <div id="asset-groups" style="margin-top:14px;"></div>
+
+        <div class="section-header-row">
+          <div class="section-title">BES — Bireysel Emeklilik Sistemi <span class="section-hint">— aylık kesintiler ayrı satırlarda, devlet katkısı dahil</span></div>
+          <button class="btn btn-primary btn-sm" onclick="toggleForm('bes-add-form')">+ Katkı Ekle</button>
+        </div>
+        <div class="add-form" id="bes-add-form">
+          <div class="form-grid">
+            <div class="form-field"><label>Fon Adı</label><input id="bf-fundname" placeholder="örn. Katılım Standart Emeklilik Fonu" /></div>
+            <div class="form-field"><label>Tarih</label><input id="bf-date" type="date" value="2026-08-23" /></div>
+            <div class="form-field"><label>Kişisel Katkı (₺)</label><input id="bf-personal" type="number" step="0.01" placeholder="2.000" /></div>
+            <div class="form-field"><label>Alınan Pay (adet)</label><input id="bf-units" type="number" step="0.01" placeholder="16.200" /></div>
+          </div>
+          <div style="font-size:11px; color:var(--text-muted); margin-bottom:10px;">Devlet katkısı, kişisel katkının %30'u olarak otomatik hesaplanır (güncel BES mevzuatı).</div>
+          <div class="form-actions">
+            <button class="btn btn-primary btn-sm" onclick="addBesContribution()">Ekle</button>
+            <button class="btn btn-sm" onclick="toggleForm('bes-add-form')">Vazgeç</button>
+          </div>
+        </div>
+        <div class="card" style="padding:0; overflow:auto; margin-top:10px;">
+          <table id="bes-table">
+            <thead><tr><th>Tarih</th><th>Fon</th><th class="num">Kişisel Katkı</th><th class="num">Devlet Katkısı</th><th class="num">Alınan Pay</th><th class="num">Birim Maliyet</th><th></th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div class="card" style="margin-top:10px; display:flex; gap:28px; flex-wrap:wrap;">
+          <div><div class="stat-label">Toplam Yatırılan</div><div class="stat-value" style="font-size:17px;" id="bes-total-invested">—</div></div>
+          <div><div class="stat-label">Güncel Değer</div><div class="stat-value" style="font-size:17px;" id="bes-total-value">—</div></div>
+          <div><div class="stat-label">Kâr / Zarar</div><div class="stat-value" style="font-size:17px;" id="bes-total-pnl">—</div></div>
+          <div><div class="stat-label">Güncel Birim Pay Fiyatı</div><div class="stat-value" style="font-size:17px;" id="bes-unit-price">₺0,1650</div></div>
+        </div>
+      </section>
+
+      <!-- ============ ZEKÂT ============ -->
+      <section class="panel" id="panel-zekat">
+        <div class="card zakat-hero">
+          <div>
+            <div class="zakat-hero-label">2026 Yılı Zekât Tutarı</div>
+            <div class="zakat-hero-value" id="zakat-amount">₺36.996,24</div>
+            <div class="zakat-badges" id="zakat-badges"></div>
+          </div>
+          <div style="min-width:220px;">
+            <div class="toggle-row" style="border:none; padding:0;">
+              <div class="toggle-text">
+                <div class="t1">Ziynet eşyasını dahil et</div>
+                <div class="t2">Kullanım amaçlı takı (Hanefi görüşü)</div>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="jewelry-toggle" checked>
+                <span class="slider"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-2" style="margin-top:14px;">
+          <div class="card">
+            <div class="stat-label" style="margin-bottom:8px;">Zekât Matrahı Dökümü</div>
+            <div id="zakat-items"></div>
+            <div style="border-top:1px solid var(--grid); margin-top:10px; padding-top:10px;">
+              <div class="legend-row"><span class="lbl">Zekâta Tabi Varlıklar Toplamı</span><span class="val" id="zakat-total-assets">—</span></div>
+              <div class="legend-row"><span class="lbl">Düşülebilir Borçlar (−)</span><span class="val" style="color:var(--critical);" id="zakat-total-liab">—</span></div>
+              <div class="legend-row" style="border-top:1px dashed var(--grid); padding-top:8px; margin-top:4px;"><span class="lbl" style="font-weight:700;">Net Zekât Matrahı</span><span class="val" id="zakat-net-base">—</span></div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="stat-label" style="margin-bottom:8px;">Nisab &amp; Farz Olma Şartları</div>
+            <div class="toggle-row"><div class="toggle-text"><div class="t1">Nisab Ölçüsü</div><div class="t2">85 gr altın × ₺4.200/gr</div></div><div style="font-weight:700;">₺357.000</div></div>
+            <div class="toggle-row"><div class="toggle-text"><div class="t1">Net matrah vs. nisab</div><div class="t2">Matrah, nisabın üzerinde mi?</div></div><span class="pill good" id="pill-nisab">✓ Evet</span></div>
+            <div class="toggle-row"><div class="toggle-text"><div class="t1">Havelân-ı Havl</div><div class="t2">Tam bir kamerî yıl (≈354 gün) doldu mu?</div></div><span class="pill good">✓ Evet (367 gün)</span></div>
+            <div class="toggle-row"><div class="toggle-text"><div class="t1">Zekât Oranı</div><div class="t2">1/40 — standart oran</div></div><div style="font-weight:700;">%2,5</div></div>
+
+            <div class="footnote">
+              <b>Not:</b> Bu ekran <code>zakat_engine.py</code> modülündeki fıkhi kural motorunun bir görselleştirmesidir.
+              Nisab bazı (altın/gümüş), ziynet eşyası dahil etme ve alacak sınıflandırması gibi tüm parametreler
+              koddaki gibi buradan da değiştirilebilir. Gerçek zekât yükümlülüğünüz için bir din görevlisine
+              danışmanız önerilir.
+            </div>
+          </div>
+        </div>
+
+        <div class="section-header-row">
+          <div class="section-title">Gayrimenkuller <span class="section-hint">— ev/yazlık zekata tabi değildir; ticaret amaçlı işaretlenen mülkler matraha dahil edilir</span></div>
+          <button class="btn btn-primary btn-sm" onclick="toggleForm('property-add-form')">+ Mülk Ekle</button>
+        </div>
+        <div class="add-form" id="property-add-form">
+          <div class="form-grid">
+            <div class="form-field"><label>Mülk Adı</label><input id="pf-name" placeholder="örn. Yazlık (Bodrum)" /></div>
+            <div class="form-field"><label>Tür</label>
+              <select id="pf-type">
+                <option value="ev">Oturulan Ev</option>
+                <option value="yazlik">Yazlık / İkinci Konut</option>
+                <option value="kiralik">Kiraya Verilen</option>
+                <option value="ticari">Ticari Gayrimenkul</option>
+              </select>
+            </div>
+            <div class="form-field"><label>Güncel Değer (₺)</label><input id="pf-value" type="number" step="0.01" placeholder="0,00" /></div>
+          </div>
+          <div class="toggle-row" style="border:none; padding:4px 0 10px;">
+            <div class="toggle-text"><div class="t1">Ticaret / satış amaçlı</div><div class="t2">İşaretlenirse zekât matrahına dahil edilir</div></div>
+            <label class="switch sm"><input type="checkbox" id="pf-trade"><span class="slider"></span></label>
+          </div>
+          <div class="form-actions">
+            <button class="btn btn-primary btn-sm" onclick="addProperty()">Ekle</button>
+            <button class="btn btn-sm" onclick="toggleForm('property-add-form')">Vazgeç</button>
+          </div>
+        </div>
+        <div class="card" id="property-list-card" style="margin-top:10px;"></div>
+
+        <div class="section-header-row">
+          <div class="section-title">Krediler / Borçlar <span class="section-hint">— sadece bu ay vadesi gelen taksit zekât matrahından düşülür</span></div>
+          <button class="btn btn-primary btn-sm" onclick="toggleForm('loan-add-form')">+ Kredi Ekle</button>
+        </div>
+        <div class="add-form" id="loan-add-form">
+          <div class="form-grid">
+            <div class="form-field"><label>Açıklama</label><input id="lf-name" placeholder="örn. Konut Kredisi" /></div>
+            <div class="form-field"><label>Kalan Toplam Borç (₺)</label><input id="lf-total" type="number" step="0.01" placeholder="0,00" /></div>
+            <div class="form-field"><label>Aylık Taksit (₺)</label><input id="lf-installment" type="number" step="0.01" placeholder="0,00" /></div>
+            <div class="form-field"><label>Kalan Taksit Sayısı (ay)</label><input id="lf-months" type="number" step="1" placeholder="0" /></div>
+          </div>
+          <div class="form-actions">
+            <button class="btn btn-primary btn-sm" onclick="addLoan()">Ekle</button>
+            <button class="btn btn-sm" onclick="toggleForm('loan-add-form')">Vazgeç</button>
+          </div>
+        </div>
+        <div class="card" id="loan-list-card" style="margin-top:10px;"></div>
+      </section>
+
+    </div>
+  </div>
+</div>
+
+<div class="chart-tooltip" id="chart-tooltip"></div>
+
+<script>
+/* ======================================================================
+   MOCK VERİ — bu değerler database/schema.sql + cost_basis_engine.py +
+   zakat_engine.py mantığıyla TUTARLI şekilde elle üretilmiştir. Gerçek
+   uygulamada bu veriler ilgili API endpoint'lerinden gelecektir. Bu sayfada
+   TÜM ekle/çıkar işlemleri sadece tarayıcı belleğinde (in-memory) tutulur;
+   sayfa yenilenirse veriler başlangıç durumuna döner (kalıcı depolama
+   kasıtlı olarak kullanılmadı).
+   ====================================================================== */
+
+const fmt = (n, decimals=0) => '₺' + Number(n).toLocaleString('tr-TR', {minimumFractionDigits:decimals, maximumFractionDigits:decimals});
+const fmtNum = (n, decimals=2) => Number(n).toLocaleString('tr-TR', {minimumFractionDigits:decimals, maximumFractionDigits:decimals});
+let uidCounter = 1;
+const uid = () => 'id' + (uidCounter++);
+const TODAY = new Date(2026,7,23); // 23 Ağustos 2026 (ay 0-indeksli)
+const MONTH_TR = ['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','Ara'];
+function fmtDate(iso){ const d = new Date(iso+'T00:00:00'); return String(d.getDate()).padStart(2,'0')+' '+MONTH_TR[d.getMonth()]+' '+String(d.getFullYear()).slice(2); }
+function addMonthsLabel(months){ const d = new Date(TODAY); d.setMonth(d.getMonth()+Number(months)); return MONTH_TR[d.getMonth()]+' '+d.getFullYear(); }
+
+const cssVar = (name) => getComputedStyle(document.body).getPropertyValue(name).trim();
+function toggleForm(id){ document.getElementById(id).classList.toggle('open'); }
+
+/* ======================================================================
+   MİNİ SVG GRAFİK MOTORU — harici kütüphane yok, saf SVG + vanilla JS.
+   ====================================================================== */
+const tooltipEl = document.getElementById('chart-tooltip');
+function showTip(html, x, y){ tooltipEl.innerHTML = html; tooltipEl.style.left = x+'px'; tooltipEl.style.top = y+'px'; tooltipEl.style.opacity = '1'; }
+function hideTip(){ tooltipEl.style.opacity = '0'; }
+function svgEl(tag, attrs){
+  const e = document.createElementNS('http://www.w3.org/2000/svg', tag);
+  for(const k in attrs) e.setAttribute(k, attrs[k]);
+  return e;
+}
+
+function drawLineChart(containerId, data, labels, {color, viewW=640, viewH=230, showAxes=true} = {}){
+  const el = document.getElementById(containerId);
+  el.innerHTML = '';
+  if(!data.length) return;
+  const padL = showAxes ? 46 : 2, padR = 6, padT = 10, padB = showAxes ? 22 : 2;
+  const plotW = viewW - padL - padR, plotH = viewH - padT - padB;
+  const maxV = Math.max(...data, 1) * 1.08;
+  const xStep = data.length > 1 ? plotW / (data.length - 1) : 0;
+  const xAt = i => padL + i * xStep;
+  const yAt = v => padT + plotH - (v / maxV) * plotH;
+
+  const svg = svgEl('svg', {viewBox:`0 0 ${viewW} ${viewH}`, preserveAspectRatio:'none', width:'100%', height:'100%'});
+
+  if (showAxes){
+    for (let s=0; s<=4; s++){
+      const v = maxV * s/4, y = yAt(v);
+      svg.appendChild(svgEl('line', {x1:padL, x2:viewW-padR, y1:y, y2:y, stroke:'var(--grid)', 'stroke-width':1}));
+      const t = svgEl('text', {x:padL-8, y:y+3, 'text-anchor':'end', class:'schart-axis-label'});
+      t.textContent = '₺'+Math.round(v/1000)+'b'; svg.appendChild(t);
+    }
+  }
+
+  const gradId = containerId+'-grad';
+  const defs = svgEl('defs', {});
+  const grad = svgEl('linearGradient', {id:gradId, x1:'0', y1:'0', x2:'0', y2:'1'});
+  grad.appendChild(svgEl('stop', {offset:'0%', 'stop-color':color, 'stop-opacity':0.22}));
+  grad.appendChild(svgEl('stop', {offset:'100%', 'stop-color':color, 'stop-opacity':0}));
+  defs.appendChild(grad); svg.appendChild(defs);
+
+  let dLine = data.map((v,i)=> (i===0?'M':'L') + xAt(i).toFixed(1) + ',' + yAt(v).toFixed(1)).join(' ');
+  const dArea = dLine + ` L${xAt(data.length-1).toFixed(1)},${yAt(0).toFixed(1)} L${xAt(0).toFixed(1)},${yAt(0).toFixed(1)} Z`;
+  svg.appendChild(svgEl('path', {d:dArea, fill:`url(#${gradId})`, stroke:'none'}));
+  svg.appendChild(svgEl('path', {d:dLine, fill:'none', stroke:color, 'stroke-width':2, 'stroke-linecap':'round', 'stroke-linejoin':'round', 'vector-effect':'non-scaling-stroke'}));
+
+  if (showAxes && labels){
+    labels.forEach((lab,i)=>{
+      if (labels.length > 7 && i % 2 !== 0 && i !== labels.length-1) return;
+      const t = svgEl('text', {x:xAt(i), y:viewH-6, 'text-anchor':'middle', class:'schart-axis-label'});
+      t.textContent = lab; svg.appendChild(t);
+    });
+  }
+
+  const hoverLine = svgEl('line', {y1:padT, y2:padT+plotH, stroke:'var(--baseline)', 'stroke-width':1, opacity:0});
+  const hoverDot = svgEl('circle', {r:5, fill:color, stroke:'var(--surface)', 'stroke-width':2, opacity:0});
+  svg.appendChild(hoverLine); svg.appendChild(hoverDot);
+
+  const overlay = svgEl('rect', {x:padL, y:0, width:plotW, height:viewH, fill:'transparent'});
+  overlay.addEventListener('mousemove', (e)=>{
+    const rect = el.getBoundingClientRect();
+    const relX = (e.clientX - rect.left) / rect.width * viewW;
+    let idx = Math.round((relX - padL) / (xStep || 1));
+    idx = Math.max(0, Math.min(data.length-1, idx));
+    const x = xAt(idx), y = yAt(data[idx]);
+    hoverDot.setAttribute('cx', x); hoverDot.setAttribute('cy', y); hoverDot.setAttribute('opacity', 1);
+    hoverLine.setAttribute('x1', x); hoverLine.setAttribute('x2', x); hoverLine.setAttribute('opacity', 1);
+    showTip(`<b>${labels ? labels[idx] : ''}</b><br>${fmt(data[idx])}`, e.clientX, e.clientY);
+  });
+  overlay.addEventListener('mouseleave', ()=>{ hoverDot.setAttribute('opacity',0); hoverLine.setAttribute('opacity',0); hideTip(); });
+  svg.appendChild(overlay);
+  el.appendChild(svg);
+}
+
+function drawBarChart(containerId, labels, series, viewW=640, viewH=270){
+  const el = document.getElementById(containerId); el.innerHTML = '';
+  const padL=46, padR=6, padT=10, padB=24;
+  const plotW = viewW-padL-padR, plotH = viewH-padT-padB;
+  const maxV = Math.max(...series.flatMap(s=>s.data), 1) * 1.15;
+  const groupW = plotW / labels.length;
+  const barGap = 5, barW = (groupW - barGap*(series.length+1)) / series.length;
+  const yAt = v => padT + plotH - (v/maxV)*plotH;
+
+  const svg = svgEl('svg', {viewBox:`0 0 ${viewW} ${viewH}`, preserveAspectRatio:'none', width:'100%', height:'100%'});
+  for (let s=0; s<=4; s++){
+    const v = maxV*s/4, y = yAt(v);
+    svg.appendChild(svgEl('line', {x1:padL, x2:viewW-padR, y1:y, y2:y, stroke:'var(--grid)', 'stroke-width':1}));
+    const t = svgEl('text', {x:padL-8, y:y+3, 'text-anchor':'end', class:'schart-axis-label'});
+    t.textContent = '₺'+Math.round(v/1000)+'b'; svg.appendChild(t);
+  }
+  svg.appendChild(svgEl('line', {x1:padL, x2:viewW-padR, y1:padT+plotH, y2:padT+plotH, stroke:'var(--baseline)', 'stroke-width':1}));
+
+  labels.forEach((lab,gi)=>{
+    const gx = padL + gi*groupW;
+    series.forEach((s,si)=>{
+      const v = s.data[gi];
+      const x = gx + barGap + si*(barW+barGap);
+      const y = yAt(v);
+      const h = Math.max((padT+plotH) - y, 0);
+      const rect = svgEl('rect', {x:x.toFixed(1), y:y.toFixed(1), width:barW.toFixed(1), height:h.toFixed(1), rx:3, fill:s.color, class:'schart-bar'});
+      const tipHtml = `<b>${lab} — ${s.name}</b><br>${fmt(v)}`;
+      rect.addEventListener('mouseenter', (e)=>{ rect.style.opacity='0.82'; showTip(tipHtml, e.clientX, e.clientY); });
+      rect.addEventListener('mousemove', (e)=> showTip(tipHtml, e.clientX, e.clientY));
+      rect.addEventListener('mouseleave', ()=>{ rect.style.opacity='1'; hideTip(); });
+      svg.appendChild(rect);
+    });
+    const t = svgEl('text', {x:gx+groupW/2, y:viewH-6, 'text-anchor':'middle', class:'schart-axis-label'});
+    t.textContent = lab; svg.appendChild(t);
+  });
+  el.appendChild(svg);
+}
+
+function drawDonutChart(containerId, segments, viewSize=200){
+  const el = document.getElementById(containerId); el.innerHTML = '';
+  const r = 68, stroke = 24, cx = viewSize/2, cy = viewSize/2;
+  const circ = 2*Math.PI*r;
+  const total = segments.reduce((a,b)=>a+b.value,0);
+  const svg = svgEl('svg', {viewBox:`0 0 ${viewSize} ${viewSize}`, width:'100%', height:'100%'});
+  svg.appendChild(svgEl('circle', {cx, cy, r, fill:'none', stroke:'var(--grid)', 'stroke-width':stroke}));
+  if (total <= 0){ el.appendChild(svg); return; }
+  let offsetAcc = 0;
+  segments.forEach(seg=>{
+    const frac = seg.value/total;
+    const len = frac*circ;
+    const circle = svgEl('circle', {
+      cx, cy, r, fill:'none', stroke:seg.color, 'stroke-width':stroke, 'stroke-linecap':'round',
+      class:'donut-seg',
+      'stroke-dasharray': `${Math.max(len-2,0)} ${circ-Math.max(len-2,0)}`,
+      'stroke-dashoffset': -offsetAcc,
+      transform: `rotate(-90 ${cx} ${cy})`,
+    });
+    const tipHtml = `<b>${seg.label}</b><br>${fmt(seg.value)} (%${fmtNum(frac*100,0)})`;
+    circle.addEventListener('mouseenter', (e)=> showTip(tipHtml, e.clientX, e.clientY));
+    circle.addEventListener('mousemove', (e)=> showTip(tipHtml, e.clientX, e.clientY));
+    circle.addEventListener('mouseleave', hideTip);
+    svg.appendChild(circle);
+    offsetAcc += len;
+  });
+  const t1 = svgEl('text', {x:cx, y:cy-3, 'text-anchor':'middle', class:'donut-center-value'}); t1.textContent = fmt(total);
+  const t2 = svgEl('text', {x:cx, y:cy+13, 'text-anchor':'middle', class:'donut-center-label'}); t2.textContent = 'Portföy Toplamı';
+  svg.appendChild(t1); svg.appendChild(t2);
+  el.appendChild(svg);
+}
+
+/* ======================================================================
+   HESAPLAR
+   ====================================================================== */
+const ACCOUNT_COLORS = ['#2a78d6','#1baf7a','#eb6834','#4a3aa7','#eda100','#e34948'];
+let accounts = [
+  {id:uid(), name:'Vadesiz Hesap', bank:'Ziraat Bankası', type:'checking', iban:'TR•• •••• •••• 4821', balance:84320.50, color:'#2a78d6', icn:'Zi'},
+  {id:uid(), name:'Birikim Hesabı', bank:'Garanti BBVA', type:'savings', iban:'TR•• •••• •••• 1190', balance:156780.00, color:'#1baf7a', icn:'Ga'},
+  {id:uid(), name:'Kredi Kartı', bank:'İş Bankası', type:'credit_card', iban:'—', balance:-12450.75, color:'#e34948', icn:'İş', creditLimit:50000},
+  {id:uid(), name:'Nakit', bank:'Cüzdan', type:'cash', iban:'—', balance:3200.00, color:'#eda100', icn:'₺'},
+  {id:uid(), name:'Yatırım Hesabı', bank:'Yapı Kredi Yatırım', type:'investment', iban:'Portföyle bağlantılı', balance:0, color:'#4a3aa7', icn:'YK', linked:'portfolio'},
+  {id:uid(), name:'BES Hesabı', bank:'Anadolu Hayat Emeklilik', type:'investment', iban:'Bireysel Emeklilik', balance:0, color:'#c98500', icn:'BES', linked:'bes'},
+];
+
+function accountCardHTML(a){
+  const neg = a.balance < 0;
+  const limitLine = a.type==='credit_card' ? `Limit: ${fmt(a.creditLimit||0)}` : a.iban;
+  return `<div class="card account-card">
+    <button class="row-remove" onclick="removeAccount('${a.id}')" title="Hesabı kaldır">✕</button>
+    <div class="account-icon" style="background:${a.color}">${a.icn}</div>
+    <div>
+      <div class="account-name">${a.name}</div>
+      <div class="account-bank">${a.bank}</div>
+    </div>
+    <div class="account-balance ${neg ? 'negative' : ''}">
+      <div class="amt">${neg ? '−' : ''}${fmt(Math.abs(a.balance), 2)}</div>
+      <div class="account-iban">${limitLine}</div>
+    </div>
+  </div>`;
+}
+
+function computedAccounts(){
+  const pf = getPortfolioTotalValue();
+  const bes = getBesTotals().value;
+  return accounts.map(a=>{
+    if(a.linked==='portfolio') return {...a, balance:pf};
+    if(a.linked==='bes') return {...a, balance:bes};
+    return a;
+  });
+}
+
+function renderAccounts(){
+  const list = computedAccounts();
+  const liquid = list.filter(a=>a.type!=='investment').reduce((s,a)=>s+a.balance,0);
+  const banks = new Set(list.map(a=>a.bank)).size;
+
+  document.getElementById('accounts-total-liquid').textContent = fmt(liquid,2);
+  document.getElementById('accounts-summary-hint').innerHTML = `${list.length} hesap · ${banks} banka/kurum<br/>tek ekranda birleştirildi`;
+  document.getElementById('accounts-list').innerHTML = list.map(a=>accountCardHTML(a)).join('') || '<div style="color:var(--text-muted); font-size:13px; padding:20px;">Henüz hesap eklenmedi.</div>';
+  document.getElementById('overview-accounts').innerHTML = list.slice(0,4).map(a=>accountCardHTML(a)).join('');
+  document.getElementById('overview-accounts-hint').textContent = `— ${list.length} hesap bağlı`;
+}
+
+let afType = 'checking';
+document.getElementById('af-type').addEventListener('change', (e)=>{
+  document.getElementById('af-limit-field').style.display = e.target.value==='credit_card' ? 'block':'none';
+});
+
+function addAccount(){
+  const name = document.getElementById('af-name').value.trim();
+  const bank = document.getElementById('af-bank').value.trim();
+  const type = document.getElementById('af-type').value;
+  const balance = parseFloat(document.getElementById('af-balance').value) || 0;
+  const limit = parseFloat(document.getElementById('af-limit').value) || undefined;
+  if(!name || !bank) return;
+  const color = ACCOUNT_COLORS[accounts.length % ACCOUNT_COLORS.length];
+  const icn = bank.slice(0,2).toUpperCase();
+  accounts.push({id:uid(), name, bank, type, iban: type==='credit_card' ? '—' : 'Yeni eklendi', balance: type==='credit_card' ? -Math.abs(balance) : balance, color, icn, creditLimit:limit});
+  renderAccounts(); renderOverviewStats();
+  toggleForm('account-add-form');
+  ['af-name','af-bank','af-balance','af-limit'].forEach(id=>document.getElementById(id).value='');
+}
+function removeAccount(id){
+  accounts = accounts.filter(a=>a.id!==id);
+  renderAccounts(); renderOverviewStats();
+}
+
+/* ======================================================================
+   BÜTÇE
+   ====================================================================== */
+const budgetCategoryPlans = {
+  'Kira / Konut':25000, 'Market / Gıda':15000, 'Eğitim':5000, 'Ulaşım':8000,
+  'Eğlence & Yeme-İçme':7000, 'Faturalar':6000, 'Sağlık':4000,
+};
+let budgetTransactions = [
+  {id:uid(), date:'2026-08-05', description:'Maaş (Behçet)', category:'Maaş', amount:72000, kind:'income'},
+  {id:uid(), date:'2026-08-05', description:'Kira Geliri (yazlık)', category:'Kira Geliri', amount:18500, kind:'income'},
+  {id:uid(), date:'2026-08-10', description:'Serbest / Ek Gelir', category:'Ek Gelir', amount:14000, kind:'income'},
+  {id:uid(), date:'2026-08-03', description:'Kira Ödemesi', category:'Kira / Konut', amount:25000, kind:'expense'},
+  {id:uid(), date:'2026-08-15', description:'Market Alışverişi (aylık toplam)', category:'Market / Gıda', amount:14200, kind:'expense'},
+  {id:uid(), date:'2026-08-01', description:'Okul Taksiti', category:'Eğitim', amount:5000, kind:'expense'},
+  {id:uid(), date:'2026-08-20', description:'Akaryakıt + Toplu Taşıma', category:'Ulaşım', amount:9100, kind:'expense'},
+  {id:uid(), date:'2026-08-18', description:'Restoran / Sosyal', category:'Eğlence & Yeme-İçme', amount:6300, kind:'expense'},
+  {id:uid(), date:'2026-08-12', description:'Elektrik+Su+Doğalgaz+İnternet', category:'Faturalar', amount:5450, kind:'expense'},
+  {id:uid(), date:'2026-08-08', description:'Eczane', category:'Sağlık', amount:1850, kind:'expense'},
+];
+const budgetMonthsHist = ['Mar','Nis','May','Haz','Tem'];
+const budgetIncomeHist = [96000, 98500, 101000, 99500, 108000];
+const budgetExpenseHist = [71200, 68900, 73500, 70100, 75800];
+
+function currentMonthTotals(){
+  const income = budgetTransactions.filter(t=>t.kind==='income').reduce((a,b)=>a+b.amount,0);
+  const expense = budgetTransactions.filter(t=>t.kind==='expense').reduce((a,b)=>a+b.amount,0);
+  return {income, expense};
+}
+function categorySpentMap(){
+  const map = {};
+  budgetTransactions.filter(t=>t.kind==='expense').forEach(t=>{ map[t.category] = (map[t.category]||0) + t.amount; });
+  return map;
+}
+
+function setBudgetKind(kind){
+  document.querySelectorAll('#bf-kind button').forEach(b=>b.classList.toggle('active', b.dataset.kind===kind));
+}
+
+function addBudgetTx(){
+  const desc = document.getElementById('bf-desc').value.trim();
+  const amount = parseFloat(document.getElementById('bf-amount').value);
+  const kind = document.querySelector('#bf-kind button.active').dataset.kind;
+  const category = document.getElementById('bf-category').value.trim() || 'Diğer';
+  if(!desc || !amount || amount<=0) return;
+  budgetTransactions.push({id:uid(), date:'2026-08-23', description:desc, category, amount, kind});
+  renderBudget(); renderOverviewStats();
+  toggleForm('budget-add-form');
+  document.getElementById('bf-desc').value=''; document.getElementById('bf-amount').value=''; document.getElementById('bf-category').value='';
+}
+function removeBudgetTx(id){
+  budgetTransactions = budgetTransactions.filter(t=>t.id!==id);
+  renderBudget(); renderOverviewStats();
+}
+
+function renderBudget(){
+  const {income, expense} = currentMonthTotals();
+  drawBarChart('chart-budget-bars', [...budgetMonthsHist,'Ağu'], [
+    {name:'Gelir', color: cssVar('--series-1'), data:[...budgetIncomeHist, income]},
+    {name:'Gider', color: cssVar('--series-2'), data:[...budgetExpenseHist, expense]},
+  ]);
+
+  const spentMap = categorySpentMap();
+  const categoryNames = Array.from(new Set([...Object.keys(budgetCategoryPlans), ...Object.keys(spentMap)]));
+  document.getElementById('budget-progress').innerHTML = categoryNames.map(name=>{
+    const planned = budgetCategoryPlans[name];
+    const spent = spentMap[name] || 0;
+    if(planned){
+      const pct = Math.min(100, Math.round(spent/planned*100));
+      const over = spent>planned;
+      return `<div class="progress-row"><div class="progress-top"><span class="cat">${name}</span><span class="vals">${fmt(spent)} / ${fmt(planned)}</span></div>
+        <div class="progress-track"><div class="progress-fill ${over?'over':''}" style="width:${pct}%"></div></div></div>`;
+    }
+    return `<div class="progress-row"><div class="progress-top"><span class="cat">${name}</span><span class="vals">${fmt(spent)} · bütçe tanımsız</span></div>
+      <div class="progress-track"><div class="progress-fill undefined-budget" style="width:100%"></div></div></div>`;
+  }).join('');
+
+  document.getElementById('bf-category-list').innerHTML = categoryNames.map(n=>`<option value="${n}">`).join('');
+
+  document.getElementById('budget-tx-list').innerHTML = budgetTransactions.slice().reverse().map(t=>`
+    <div class="list-row">
+      <span class="dot" style="background:${t.kind==='income'?cssVar('--good'):cssVar('--series-2')}"></span>
+      <div class="list-row-main">
+        <div class="list-row-title">${t.description}</div>
+        <div class="list-row-sub">${t.category} · ${fmtDate(t.date)}</div>
+      </div>
+      <div class="list-row-val" style="color:${t.kind==='income'?'var(--good-text)':'var(--text-primary)'}">${t.kind==='income'?'+':'−'}${fmt(t.amount)}</div>
+      <button class="row-remove" onclick="removeBudgetTx('${t.id}')">✕</button>
+    </div>`).join('') || '<div style="color:var(--text-muted); font-size:13px; padding:10px 0;">Henüz işlem yok.</div>';
+}
+
+/* ======================================================================
+   PORTFÖY — lot bazlı (her alım ayrı satır)
+   ====================================================================== */
+let portfolioGroups = [
+  {id:'gold', assetClass:'gold', label:'Altın (Gram)', unit:'gr', currentPrice:4200, method:'FIFO', lots:[
+     {id:uid(), date:'2026-01-10', qty:100, unitCost:2500},
+     {id:uid(), date:'2026-03-01', qty:50, unitCost:2800},
+  ]},
+  {id:'usd', assetClass:'currency', label:'USD (Amerikan Doları)', unit:'USD', currentPrice:41.20, method:'Ağırlıklı Ort.', lots:[
+     {id:uid(), date:'2025-11-15', qty:3000, unitCost:30.00},
+     {id:uid(), date:'2026-04-05', qty:2000, unitCost:36.25},
+  ]},
+  {id:'eur', assetClass:'currency', label:'EUR (Euro)', unit:'EUR', currentPrice:44.80, method:'Ağırlıklı Ort.', lots:[
+     {id:uid(), date:'2025-10-05', qty:1200, unitCost:33.00},
+     {id:uid(), date:'2026-06-01', qty:800, unitCost:38.00},
+  ]},
+  {id:'tefas-aft', assetClass:'tefas', label:'TEFAS — Teknoloji Fonu (AFT)', unit:'pay', currentPrice:112.00, method:'FIFO', lots:[
+     {id:uid(), date:'2025-12-01', qty:700, unitCost:80.00},
+     {id:uid(), date:'2026-05-10', qty:500, unitCost:92.00},
+  ]},
+];
+const ASSET_CLASS_META = {
+  gold:{color:'var(--series-2)', label:'Altın'},
+  currency:{color:'var(--series-1)', label:'Döviz'},
+  tefas:{color:'var(--series-3)', label:'TEFAS Fonu'},
+};
+const portfolioHistory = [
+  {d:'Ağu 25', v:742000}, {d:'Eyl 25', v:758000}, {d:'Eki 25', v:771000}, {d:'Kas 25', v:803000},
+  {d:'Ara 25', v:812000}, {d:'Oca 26', v:845000}, {d:'Şub 26', v:861000}, {d:'Mar 26', v:878000},
+  {d:'Nis 26', v:902000}, {d:'May 26', v:918000}, {d:'Haz 26', v:955000}, {d:'Tem 26', v:986000},
+  {d:'Ağu 26', v:1060000},
+];
+const PERIOD_START_IDX = {'1m':11, '3m':9, '6m':6, '9m':3, '12m':0};
+const PERIOD_LABEL = {'1m':'1 aylık','3m':'3 aylık','6m':'6 aylık','9m':'9 aylık','12m':'12 aylık'};
+
+let besCurrentUnitPrice = 0.1650;
+let besContributions = [
+  {id:uid(), date:'2026-03-01', fundName:'Katılım Standart Emeklilik Fonu', personalAmount:2000, stateAmount:600, unitsBought:18000},
+  {id:uid(), date:'2026-04-01', fundName:'Katılım Standart Emeklilik Fonu', personalAmount:2000, stateAmount:600, unitsBought:17600},
+  {id:uid(), date:'2026-05-01', fundName:'Katılım Standart Emeklilik Fonu', personalAmount:2000, stateAmount:600, unitsBought:17300},
+  {id:uid(), date:'2026-06-01', fundName:'Katılım Standart Emeklilik Fonu', personalAmount:2000, stateAmount:600, unitsBought:17700},
+  {id:uid(), date:'2026-07-01', fundName:'Katılım Standart Emeklilik Fonu', personalAmount:2000, stateAmount:600, unitsBought:16800},
+  {id:uid(), date:'2026-08-01', fundName:'Katılım Standart Emeklilik Fonu', personalAmount:2000, stateAmount:600, unitsBought:16200},
+];
+
+function groupTotals(g){
+  const qty = g.lots.reduce((a,l)=>a+l.qty,0);
+  const cost = g.lots.reduce((a,l)=>a+l.qty*l.unitCost,0);
+  const avgCost = qty>0 ? cost/qty : 0;
+  const value = qty*g.currentPrice;
+  const pnl = value-cost;
+  const pnlPct = cost>0 ? pnl/cost*100 : 0;
+  return {qty,cost,avgCost,value,pnl,pnlPct};
+}
+function getPortfolioTotalValue(){ return portfolioGroups.reduce((a,g)=>a+groupTotals(g).value,0); }
+function getBesTotals(){
+  const totalUnits = besContributions.reduce((a,c)=>a+c.unitsBought,0);
+  const totalInvested = besContributions.reduce((a,c)=>a+c.personalAmount+c.stateAmount,0);
+  const value = totalUnits*besCurrentUnitPrice;
+  return {totalUnits, totalInvested, value, pnl:value-totalInvested, pnlPct: totalInvested>0 ? (value-totalInvested)/totalInvested*100 : 0};
+}
+
+function assetGroupHTML(g){
+  const t = groupTotals(g);
+  const positive = t.pnl >= 0;
+  const meta = ASSET_CLASS_META[g.assetClass];
+  const lotsHTML = g.lots.map(l=>{
+    const lv = l.qty*g.currentPrice, lc = l.qty*l.unitCost, lp = lv-lc, lpp = lc>0? lp/lc*100:0;
+    const lpos = lp>=0;
+    return `<tr>
+      <td>${fmtDate(l.date)}</td>
+      <td class="num">${fmtNum(l.qty,g.unit==='gr'||g.unit==='pay'?2:2)} ${g.unit}</td>
+      <td class="num">${fmtNum(l.unitCost,4)}</td>
+      <td class="num">${fmtNum(g.currentPrice,4)}</td>
+      <td class="num">${fmt(lc)}</td>
+      <td class="num">${fmt(lv)}</td>
+      <td class="num"><span class="pill ${lpos?'good':'bad'}">${lpos?'▲':'▼'} ${fmt(Math.abs(lp))} (%${fmtNum(Math.abs(lpp),1)})</span></td>
+      <td><button class="row-remove" onclick="removeLot('${g.id}','${l.id}')">✕</button></td>
+    </tr>`;
+  }).join('');
+
+  return `<div class="asset-group">
+    <div class="asset-group-head">
+      <div class="ag-name"><span class="dot" style="background:${meta.color}"></span>${g.label} <span style="font-weight:400; color:var(--text-muted); font-size:11px;">(${meta.label} · ${g.method})</span></div>
+      <div class="ag-stats">
+        <div><div class="ag-stat-label">Toplam Miktar</div><div class="ag-stat-value">${fmtNum(t.qty,2)} ${g.unit}</div></div>
+        <div><div class="ag-stat-label">Ort. Maliyet</div><div class="ag-stat-value">${fmtNum(t.avgCost,4)}</div></div>
+        <div><div class="ag-stat-label">Güncel Değer</div><div class="ag-stat-value">${fmt(t.value)}</div></div>
+        <div><div class="ag-stat-label">Kâr/Zarar</div><div class="ag-stat-value" style="color:${positive?'var(--good-text)':'var(--critical)'}">${positive?'▲':'▼'} ${fmt(Math.abs(t.pnl))} (%${fmtNum(Math.abs(t.pnlPct),1)})</div></div>
+      </div>
+      <button class="row-remove" onclick="removeAssetGroup('${g.id}')" title="Bu varlığı tamamen kaldır">🗑</button>
+    </div>
+    <div class="ag-body">
+      <table class="lot-table">
+        <thead><tr><th>Tarih</th><th class="num">Miktar</th><th class="num">Alım Fiyatı</th><th class="num">Güncel Fiyat</th><th class="num">Maliyet</th><th class="num">Değer</th><th class="num">Kâr/Zarar</th><th></th></tr></thead>
+        <tbody>${lotsHTML || '<tr><td colspan="8" style="color:var(--text-muted);">Bu varlıkta işlem yok.</td></tr>'}</tbody>
+      </table>
+      <div class="add-form" id="lotform-${g.id}" style="margin-top:10px;">
+        <div class="form-grid">
+          <div class="form-field"><label>Tarih</label><input type="date" id="lf-date-${g.id}" value="2026-08-23" /></div>
+          <div class="form-field"><label>Miktar (${g.unit})</label><input type="number" step="0.0001" id="lf-qty-${g.id}" placeholder="0" /></div>
+          <div class="form-field"><label>Birim Fiyat (₺)</label><input type="number" step="0.0001" id="lf-cost-${g.id}" placeholder="0,00" /></div>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-primary btn-sm" onclick="addLot('${g.id}')">Ekle</button>
+          <button class="btn btn-sm" onclick="toggleForm('lotform-${g.id}')">Vazgeç</button>
+        </div>
+      </div>
+      <button class="btn btn-ghost btn-sm" style="margin-top:10px;" onclick="toggleForm('lotform-${g.id}')">+ Alım Ekle</button>
+    </div>
+  </div>`;
+}
+
+function renderAssetGroups(){
+  document.getElementById('asset-groups').innerHTML = portfolioGroups.map(assetGroupHTML).join('') || '<div style="color:var(--text-muted); font-size:13px;">Henüz varlık eklenmedi.</div>';
+}
+function addLot(groupId){
+  const g = portfolioGroups.find(x=>x.id===groupId); if(!g) return;
+  const date = document.getElementById('lf-date-'+groupId).value || '2026-08-23';
+  const qty = parseFloat(document.getElementById('lf-qty-'+groupId).value);
+  const cost = parseFloat(document.getElementById('lf-cost-'+groupId).value);
+  if(!qty || qty<=0 || !cost || cost<0) return;
+  g.lots.push({id:uid(), date, qty, unitCost:cost});
+  refreshPortfolioEverything();
+}
+function removeLot(groupId, lotId){
+  const g = portfolioGroups.find(x=>x.id===groupId); if(!g) return;
+  g.lots = g.lots.filter(l=>l.id!==lotId);
+  refreshPortfolioEverything();
+}
+function removeAssetGroup(groupId){
+  portfolioGroups = portfolioGroups.filter(g=>g.id!==groupId);
+  refreshPortfolioEverything();
+}
+function onAssetClassChange(){
+  const cls = document.getElementById('ag-class').value;
+  document.getElementById('ag-name-field').style.display = cls==='gold' ? 'none' : 'block';
+}
+function addAssetGroup(){
+  const cls = document.getElementById('ag-class').value;
+  const name = document.getElementById('ag-name').value.trim();
+  const price = parseFloat(document.getElementById('ag-price').value);
+  const date = document.getElementById('ag-date').value || '2026-08-23';
+  const qty = parseFloat(document.getElementById('ag-qty').value);
+  const cost = parseFloat(document.getElementById('ag-cost').value);
+  if(!price || !qty || qty<=0 || cost===undefined || isNaN(cost)) return;
+  const label = cls==='gold' ? 'Altın (Gram)' : (name || (cls==='currency' ? 'Yeni Döviz' : 'Yeni TEFAS Fonu'));
+  const unit = cls==='gold' ? 'gr' : (cls==='currency' ? name.toUpperCase().slice(0,3)||'DÖV' : 'pay');
+  portfolioGroups.push({
+    id: uid(), assetClass:cls, label, unit, currentPrice:price,
+    method: cls==='currency' ? 'Ağırlıklı Ort.' : 'FIFO',
+    lots:[{id:uid(), date, qty, unitCost:cost}],
+  });
+  refreshPortfolioEverything();
+  toggleForm('asset-add-form');
+  ['ag-name','ag-price','ag-qty','ag-cost'].forEach(id=>document.getElementById(id).value='');
+}
+
+function renderBesTable(){
+  const tbody = document.querySelector('#bes-table tbody');
+  tbody.innerHTML = besContributions.slice().reverse().map(c=>{
+    const unitCost = (c.personalAmount+c.stateAmount)/c.unitsBought;
+    return `<tr>
+      <td>${fmtDate(c.date)}</td>
+      <td>${c.fundName}</td>
+      <td class="num">${fmt(c.personalAmount)}</td>
+      <td class="num">${fmt(c.stateAmount)}</td>
+      <td class="num">${fmtNum(c.unitsBought,0)}</td>
+      <td class="num">${fmtNum(unitCost,4)}</td>
+      <td><button class="row-remove" onclick="removeBesContribution('${c.id}')">✕</button></td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="7" style="color:var(--text-muted);">Henüz katkı yok.</td></tr>';
+
+  const t = getBesTotals();
+  document.getElementById('bes-total-invested').textContent = fmt(t.totalInvested,2);
+  document.getElementById('bes-total-value').textContent = fmt(t.value,2);
+  const pnlEl = document.getElementById('bes-total-pnl');
+  pnlEl.textContent = `${t.pnl>=0?'▲':'▼'} ${fmt(Math.abs(t.pnl),2)} (%${fmtNum(Math.abs(t.pnlPct),1)})`;
+  pnlEl.style.color = t.pnl>=0 ? 'var(--good-text)' : 'var(--critical)';
+  document.getElementById('bes-unit-price').textContent = '₺'+fmtNum(besCurrentUnitPrice,4);
+  document.getElementById('bes-mini-value').textContent = fmt(t.value,0);
+}
+function addBesContribution(){
+  const fundName = document.getElementById('bf-fundname').value.trim() || 'Katılım Standart Emeklilik Fonu';
+  const date = document.getElementById('bf-date').value || '2026-08-23';
+  const personal = parseFloat(document.getElementById('bf-personal').value);
+  const units = parseFloat(document.getElementById('bf-units').value);
+  if(!personal || personal<=0 || !units || units<=0) return;
+  besContributions.push({id:uid(), date, fundName, personalAmount:personal, stateAmount: personal*0.3, unitsBought:units});
+  renderBesTable(); renderAccounts(); renderOverviewStats();
+  toggleForm('bes-add-form');
+  ['bf-personal','bf-units'].forEach(id=>document.getElementById(id).value='');
+}
+function removeBesContribution(id){
+  besContributions = besContributions.filter(c=>c.id!==id);
+  renderBesTable(); renderAccounts(); renderOverviewStats();
+}
+
+function drawPortfolioLine(period){
+  const startIdx = PERIOD_START_IDX[period];
+  const slice = portfolioHistory.slice(startIdx);
+  const total = getPortfolioTotalValue();
+  // Son noktayı güncel (canlı hesaplanan) portföy değeriyle senkron tut:
+  const seriesValues = slice.map((p,i)=> i===slice.length-1 ? total : p.v);
+  drawLineChart('chart-portfolio-line', seriesValues, slice.map(p=>p.d), {color: cssVar('--series-1'), viewH:270});
+
+  const start = seriesValues[0], end = seriesValues[seriesValues.length-1];
+  const delta = end - start, pct = start>0 ? (delta/start*100) : 0;
+  document.getElementById('portfolio-value').textContent = fmt(end);
+  const el = document.getElementById('portfolio-delta');
+  el.className = 'stat-delta ' + (delta>=0 ? 'up' : 'down');
+  el.textContent = `${delta>=0?'▲':'▼'} ${fmt(Math.abs(delta))} (%${fmtNum(Math.abs(pct),1)}) · ${PERIOD_LABEL[period]} dönem`;
+}
+
+function computeDonutData(){
+  const byClass = {gold:0, currency:0, tefas:0};
+  portfolioGroups.forEach(g=>{ byClass[g.assetClass] = (byClass[g.assetClass]||0) + groupTotals(g).value; });
+  return [
+    {label:'Döviz', value: byClass.currency, color: cssVar('--series-1')},
+    {label:'Altın', value: byClass.gold, color: cssVar('--series-2')},
+    {label:'TEFAS Fonları', value: byClass.tefas, color: cssVar('--series-3')},
+  ].filter(d=>d.value>0);
+}
+function drawDonut(){
+  const donutData = computeDonutData();
+  drawDonutChart('chart-portfolio-donut', donutData);
+  const total = donutData.reduce((a,b)=>a+b.value,0);
+  document.getElementById('donut-legend').innerHTML = donutData.map(d=>
+    `<div class="legend-row"><span class="dot" style="background:${d.color}"></span><span class="lbl">${d.label}</span><span class="val">${fmt(d.value)}</span><span class="pct">%${total>0?fmtNum(d.value/total*100,0):'0'}</span></div>`
+  ).join('') || '<div style="color:var(--text-muted); font-size:12px;">Veri yok.</div>';
+}
+function renderOverviewSparkline(){
+  const vals = portfolioHistory.map(p=>p.v);
+  vals[vals.length-1] = getPortfolioTotalValue();
+  drawLineChart('chart-overview-portfolio', vals, portfolioHistory.map(p=>p.d), {color: cssVar('--series-3'), viewH:230});
+}
+function currentPeriod(){ return document.querySelector('#period-tabs .tab-btn.active').dataset.period; }
+function refreshPortfolioEverything(){
+  renderAssetGroups();
+  drawPortfolioLine(currentPeriod());
+  drawDonut();
+  renderOverviewSparkline();
+  renderAccounts();
+  renderZakat();
+  renderOverviewStats();
+}
+document.getElementById('period-tabs').addEventListener('click', (e)=>{
+  const btn = e.target.closest('.tab-btn'); if(!btn) return;
+  document.querySelectorAll('#period-tabs .tab-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  drawPortfolioLine(btn.dataset.period);
+});
+
+function renderAllCharts(){
+  renderBudget();
+  drawPortfolioLine(currentPeriod());
+  drawDonut();
+  renderOverviewSparkline();
+}
+
+/* ======================================================================
+   ZEKÂT — nakit/altın/döviz/TEFAS + ticaret amaçlı gayrimenkul + kredi taksiti
+   ====================================================================== */
+const GOLD_PRICE = 4200;
+const nisabValue = 85 * GOLD_PRICE; // 357.000
+const CREDIT_CARD_LIABILITY = 12450.75;
+
+let properties = [
+  {id:uid(), name:'Ana Konut (Oturulan)', type:'ev', value:3200000, tradeIntent:false},
+  {id:uid(), name:'Yazlık (Bodrum)', type:'yazlik', value:1850000, tradeIntent:false},
+];
+let loans = [
+  {id:uid(), name:'Konut Kredisi (Ana Konut)', totalRemaining:620000, monthlyInstallment:18500, remainingMonths:34},
+  {id:uid(), name:'Taşıt Kredisi', totalRemaining:96000, monthlyInstallment:8000, remainingMonths:12},
+];
+const PROPERTY_TYPE_LABEL = {ev:'Oturulan Ev', yazlik:'Yazlık / İkinci Konut', kiralik:'Kiraya Verilen', ticari:'Ticari Gayrimenkul'};
+
+function zakatCashGoldItems(includeJewelry){
+  return [
+    {label:'Nakit (vadesiz + birikim + nakit)', value: 84320.50+156780.00+3200.00, included:true, reason:null},
+    {label:'Yatırım Altını (150 gr)', value: 630000, included:true, reason:null},
+    {label:'Döviz (USD + EUR)', value: 295600, included:true, reason:null},
+    {label:'TEFAS Fonu', value: 134400, included:true, reason:null},
+    {label:'Ziynet Eşyası (40 gr bilezik, kullanım amaçlı)', value: 40*GOLD_PRICE, included:includeJewelry, reason: includeJewelry?null:'Kullanım amaçlı ziynet eşyası (mezhep görüşüne göre hariç)'},
+    {label:'Güçlü Alacak (arkadaşa verilen borç)', value: 20000, included:true, reason:null},
+    {label:'Zayıf Alacak (dava aşamasında)', value: 15000, included:false, reason:'Tahsili şüpheli alacak (fıkhen matraha dahil edilmez)'},
+  ];
+}
+function propertyZakatItems(){
+  return properties.map(p=>({
+    label:`${p.name} (${PROPERTY_TYPE_LABEL[p.type]})`,
+    value:p.value,
+    included:p.tradeIntent,
+    reason:p.tradeIntent?null:'Kullanım amaçlı gayrimenkul — ticaret niyeti yok (zekata tabi değil)',
+  }));
+}
+function totalDeductibleLiabilities(){
+  return CREDIT_CARD_LIABILITY + loans.reduce((a,l)=>a+l.monthlyInstallment,0);
+}
+
+function propertyRowHTML(p){
+  return `<div class="list-row">
+    <span class="dot" style="background:${p.tradeIntent?cssVar('--series-3'):cssVar('--text-muted')}"></span>
+    <div class="list-row-main">
+      <div class="list-row-title">${p.name}</div>
+      <div class="list-row-sub">${PROPERTY_TYPE_LABEL[p.type]} ${p.tradeIntent?'· <b style="color:var(--good-text)">Zekâta dahil</b>':'· Zekâta dahil değil'}</div>
+    </div>
+    <div class="list-row-val">${fmt(p.value)}</div>
+    <button class="row-remove" onclick="removeProperty('${p.id}')">✕</button>
+  </div>`;
+}
+function renderProperties(){
+  const total = properties.reduce((a,p)=>a+p.value,0);
+  document.getElementById('property-list-card').innerHTML = `
+    <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-size:12px; color:var(--text-muted);">
+      <span>Toplam Gayrimenkul Değeri</span><span style="font-weight:700; color:var(--text-primary);">${fmt(total)}</span>
+    </div>
+    ${properties.map(propertyRowHTML).join('') || '<div style="color:var(--text-muted); font-size:13px;">Mülk eklenmedi.</div>'}`;
+}
+function addProperty(){
+  const name = document.getElementById('pf-name').value.trim();
+  const type = document.getElementById('pf-type').value;
+  const value = parseFloat(document.getElementById('pf-value').value);
+  const tradeIntent = document.getElementById('pf-trade').checked;
+  if(!name || !value || value<=0) return;
+  properties.push({id:uid(), name, type, value, tradeIntent});
+  renderProperties(); renderZakat();
+  toggleForm('property-add-form');
+  document.getElementById('pf-name').value=''; document.getElementById('pf-value').value=''; document.getElementById('pf-trade').checked=false;
+}
+function removeProperty(id){ properties = properties.filter(p=>p.id!==id); renderProperties(); renderZakat(); }
+
+function loanRowHTML(l){
+  const endLabel = addMonthsLabel(l.remainingMonths);
+  return `<div class="list-row">
+    <span class="dot" style="background:${cssVar('--series-2')}"></span>
+    <div class="list-row-main">
+      <div class="list-row-title">${l.name}</div>
+      <div class="list-row-sub">Kalan borç ${fmt(l.totalRemaining)} · ${l.remainingMonths} ay taksit · bitiş: ${endLabel}</div>
+    </div>
+    <div class="list-row-val">${fmt(l.monthlyInstallment)}<div style="font-size:10px; color:var(--text-muted); font-weight:500;">aylık taksit</div></div>
+    <button class="row-remove" onclick="removeLoan('${l.id}')">✕</button>
+  </div>`;
+}
+function renderLoans(){
+  const totalRemaining = loans.reduce((a,l)=>a+l.totalRemaining,0);
+  const totalInstallment = loans.reduce((a,l)=>a+l.monthlyInstallment,0);
+  document.getElementById('loan-list-card').innerHTML = `
+    <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-size:12px; color:var(--text-muted); flex-wrap:wrap; gap:6px;">
+      <span>Toplam Kalan Borç: <b style="color:var(--text-primary);">${fmt(totalRemaining)}</b></span>
+      <span>Bu Ay Düşülebilir Taksit Toplamı: <b style="color:var(--critical);">${fmt(totalInstallment)}</b></span>
+    </div>
+    ${loans.map(loanRowHTML).join('') || '<div style="color:var(--text-muted); font-size:13px;">Kredi/borç eklenmedi.</div>'}`;
+}
+function addLoan(){
+  const name = document.getElementById('lf-name').value.trim();
+  const totalRemaining = parseFloat(document.getElementById('lf-total').value);
+  const monthlyInstallment = parseFloat(document.getElementById('lf-installment').value);
+  const remainingMonths = parseInt(document.getElementById('lf-months').value, 10);
+  if(!name || !totalRemaining || !monthlyInstallment || !remainingMonths) return;
+  loans.push({id:uid(), name, totalRemaining, monthlyInstallment, remainingMonths});
+  renderLoans(); renderZakat();
+  toggleForm('loan-add-form');
+  ['lf-name','lf-total','lf-installment','lf-months'].forEach(id=>document.getElementById(id).value='');
+}
+function removeLoan(id){ loans = loans.filter(l=>l.id!==id); renderLoans(); renderZakat(); }
+
+function renderZakat(){
+  const includeJewelry = document.getElementById('jewelry-toggle').checked;
+  const items = [...zakatCashGoldItems(includeJewelry), ...propertyZakatItems()];
+  const totalAssets = items.filter(i=>i.included).reduce((a,b)=>a+b.value,0);
+  const liabilities = totalDeductibleLiabilities();
+  const netBase = Math.max(0, totalAssets - liabilities);
+  const aboveNisab = netBase >= nisabValue;
+  const hawlComplete = true; // örnek: bir kameri yıl önce nisaba ulaşıldı varsayımı
+  const obligatory = aboveNisab && hawlComplete;
+  const zakatDue = obligatory ? netBase * 0.025 : 0;
+
+  document.getElementById('zakat-items').innerHTML = items.map(i=>
+    `<div class="legend-row" style="opacity:${i.included?1:0.55}">
+      <span class="dot" style="background:${i.included? cssVar('--series-3') : cssVar('--text-muted')}"></span>
+      <span class="lbl">${i.label}${i.reason? '<br/><span style=\"font-size:10.5px;color:var(--text-muted)\">'+i.reason+'</span>' : ''}</span>
+      <span class="val" style="${i.included?'':'text-decoration:line-through; color:var(--text-muted); font-weight:500;'}">${fmt(i.value,2)}</span>
+    </div>`
+  ).join('');
+
+  document.getElementById('zakat-total-assets').textContent = fmt(totalAssets,2);
+  document.getElementById('zakat-total-liab').textContent = '−' + fmt(liabilities,2);
+  document.getElementById('zakat-net-base').textContent = fmt(netBase,2);
+  document.getElementById('zakat-amount').textContent = fmt(zakatDue,2);
+  document.getElementById('overview-zakat-amount').textContent = fmt(zakatDue,0);
+
+  document.getElementById('pill-nisab').className = 'pill ' + (aboveNisab?'good':'bad');
+  document.getElementById('pill-nisab').textContent = aboveNisab ? '✓ Evet' : '✗ Hayır';
+
+  const badgesHTML = `
+    <span class="badge ${aboveNisab?'ok':'warn'}">${aboveNisab?'✓':'!'} ${aboveNisab?'Nisabın üzerinde':'Nisabın altında'}</span>
+    <span class="badge ${hawlComplete?'ok':'warn'}">${hawlComplete?'✓':'!'} Havelân-ı havl ${hawlComplete?'tamam (367 gün)':'tamamlanmadı'}</span>
+  `;
+  document.getElementById('zakat-badges').innerHTML = badgesHTML;
+  document.getElementById('overview-zakat-badges').innerHTML = badgesHTML;
+}
+document.getElementById('jewelry-toggle').addEventListener('change', renderZakat);
+
+/* ======================================================================
+   GENEL BAKIŞ — özet kartlar
+   ====================================================================== */
+function renderOverviewStats(){
+  const list = computedAccounts();
+  const totalVarlik = list.reduce((a,acc)=>a+acc.balance,0);
+  const {income, expense} = currentMonthTotals();
+  const net = income-expense;
+  const propertyTotal = properties.reduce((a,p)=>a+p.value,0);
+  document.getElementById('overview-stats').innerHTML = `
+    <div class="card">
+      <div class="stat-label">Toplam Varlık <span style="font-weight:400;">(gayrimenkul hariç)</span></div>
+      <div class="stat-value">${fmt(totalVarlik,0)}</div>
+      <div class="stat-delta up">▲ gayrimenkul ayrıca: ${fmt(propertyTotal,0)}</div>
+    </div>
+    <div class="card">
+      <div class="stat-label">Bu Ay Gelir</div>
+      <div class="stat-value">${fmt(income,0)}</div>
+      <div class="stat-delta up">▲ maaş + kira + ek gelir</div>
+    </div>
+    <div class="card">
+      <div class="stat-label">Bu Ay Gider</div>
+      <div class="stat-value">${fmt(expense,0)}</div>
+      <div class="stat-delta ${expense>income*0.7?'down':'up'}">${budgetTransactions.filter(t=>t.kind==='expense').length} kalemde takip</div>
+    </div>
+    <div class="card">
+      <div class="stat-label">Net Nakit Akışı</div>
+      <div class="stat-value">${fmt(net,0)}</div>
+      <div class="stat-delta ${net>=0?'up':'down'}">${net>=0?'▲ bütçenin üzerinde':'▼ açık veriyor'}</div>
+    </div>`;
+}
+
+/* ======================================================================
+   NAVİGASYON & TEMA
+   ====================================================================== */
+const titles = {
+  genel:['Genel Bakış','Tüm hesap ve varlıkların özeti'],
+  hesaplar:['Hesaplar','Birden fazla banka hesabını tek ekranda izleyin, ekleyin veya kaldırın'],
+  butce:['Bütçe','Aylık gelir/gider kalemlerini ekleyin, kategori bazlı takip edin'],
+  portfoy:['Portföy','Her alımı ayrı satırda görün — altın, döviz, TEFAS fonu ve BES'],
+  zekat:['Zekât','Fıkhi kurallara göre zekât matrahı, gayrimenkul ve kredi bilgisi dahil'],
+};
+document.querySelectorAll('.nav-item').forEach(item=>{
+  item.addEventListener('click', ()=>{
+    document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+    item.classList.add('active');
+    document.getElementById('panel-'+item.dataset.tab).classList.add('active');
+    document.getElementById('topbar-title').textContent = titles[item.dataset.tab][0];
+    document.getElementById('topbar-sub').textContent = titles[item.dataset.tab][1];
+  });
+});
+
+document.getElementById('theme-toggle').addEventListener('click', ()=>{
+  const body = document.body;
+  const isDark = body.getAttribute('data-theme') === 'dark';
+  body.setAttribute('data-theme', isDark ? 'light' : 'dark');
+  document.getElementById('theme-toggle').textContent = isDark ? '☾' : '☀';
+  renderAllCharts();
+});
+
+/* ======================================================================
+   İLK RENDER
+   ====================================================================== */
+renderAccounts();
+renderBudget();
+renderAssetGroups();
+renderBesTable();
+drawPortfolioLine('12m');
+drawDonut();
+renderOverviewSparkline();
+renderProperties();
+renderLoans();
+renderZakat();
+renderOverviewStats();
+</script>
+</body>
+</html>
