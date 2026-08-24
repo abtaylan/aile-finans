@@ -31,11 +31,36 @@ belgeler (FastAPI/Celery/Redis kısmı henüz uygulanmadı, bkz. notlar):
   Supabase'e yazılıyor). `backend/` altındaki kod (maliyet motoru, zekat
   motoru, testler) hâlâ geçerli ve ileride ya bir Railway servisine ya da
   Supabase Edge Functions'a taşınabilir.
-- **Barındırma**: GitHub reposu `abtaylan/aile-finans` (public) oluşturuldu.
-  Vercel bağlantısı ve ilk deploy bu oturumun kalan adımı.
+- **Barındırma**: GitHub reposu `abtaylan/aile-finans` (public), Vercel
+  projesi `aile-finans` (`abtaylans-projects` takımı) — ilk production
+  deploy tamamlandı: `https://aile-finans-mu.vercel.app`.
 - **Fiyat verisi**: TCMB/TEFAS otomatik besleme henüz yok; Portföy
   sayfasında "Fiyat Güncelle" ile manuel fiyat girilip
   `asset_price_history` tablosuna `source='manual'` olarak yazılıyor.
+- **Kimlik doğrulama**: Şifre yerine **e-posta OTP** (6 haneli kod,
+  passwordless) kullanılıyor — `web/src/app/giris/`. Akış: e-posta gir →
+  `supabase.auth.signInWithOtp` (yeni kullanıcıyı otomatik oluşturur,
+  `shouldCreateUser: true`) → kullanıcıya e-postayla gelen 6 haneli kodu
+  gir → `supabase.auth.verifyOtp({ email, token, type: 'email' })`.
+  Profili olmayan kullanıcı `/onboarding`'e yönlendirilir. `/kayit`
+  kaldırıldı (kayıt ve giriş artık aynı ekran).
+  - **Test hesabı kısayolu**: `TEST_OTP_EMAIL` (varsayılan
+    `test@ailefinans.app`) ile bu adres girildiğinde gerçek e-posta
+    gönderilmez; doğrudan kod adımına geçilir. `TEST_OTP_CODE`
+    (varsayılan `123456`) girildiğinde, sunucu tarafında
+    `SUPABASE_SERVICE_ROLE_KEY` ile oluşturulan admin istemcisi
+    (`web/src/lib/supabase/admin.ts`) `auth.admin.generateLink({type:
+    'magiclink'})` çağırıp dönen `hashed_token`'ı `verifyOtp` ile
+    doğrulayarak gerçek bir Supabase oturumu kurar — yani kısayol yalnızca
+    e-posta gönderimini atlar, oturumun kendisi sahte değildir. Bu, tek
+    e-posta/tek kullanıcı modeline geçilene kadar geçici bir test
+    kolaylığıdır; üretimde kaldırılmalı veya `TEST_OTP_EMAIL` boş
+    bırakılarak devre dışı kalmalıdır.
+  - **Önkoşul**: Supabase'in "Magic Link" e-posta şablonu varsayılan
+    olarak yalnızca tıklanabilir bir bağlantı (`{{ .ConfirmationURL }}`)
+    içerir, 6 haneli kod içermez. Gerçek kullanıcıların koda sahip
+    olabilmesi için şablona `{{ .Token }}` eklenmesi gerekiyor (Supabase
+    Dashboard → Authentication → Email Templates → Magic Link).
 
 
 ## 1. Genel Bakış
