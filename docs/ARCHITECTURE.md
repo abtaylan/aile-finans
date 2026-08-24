@@ -1,5 +1,43 @@
 # Aile Finans ve Varlık Yönetimi — Mimari Doküman v0.1
 
+## 0. Dağıtım Durumu (Güncel — Ağustos 2026)
+
+Gerçek uygulamanın ilk sürümü aşağıdaki gibi hayata geçirildi; bu bölüm
+yaşayan bir durum özetidir, aşağıdaki v0.1 mimarisi ise orijinal planı
+belgeler (FastAPI/Celery/Redis kısmı henüz uygulanmadı, bkz. notlar):
+
+- **Veritabanı**: Supabase (proje: `aile-finans`, bölge `eu-central-1`).
+  `database/schema_v2_supabase.sql` + `database/schema_v2_rls.sql` uygulandı
+  — 24 tablo, tamamı Row Level Security ile aile bazlı izole. Kimlik
+  doğrulama tamamen **Supabase Auth**'a devredildi; `public.users` artık
+  `auth.users`'a 1-1 bağlı bir profil tablosu (ayrı `password_hash` yok).
+- **Web**: Next.js 16 (App Router, Turbopack) + Tailwind v4 + elle
+  oluşturulmuş shadcn/ui tarzı bileşenler (npm registry üzerinden
+  `@radix-ui/*` paketleri; `shadcn` CLI'nin kendisi bu ortamdan
+  `ui.shadcn.com`'a erişemediği için doğrudan kuruldu) + Supabase
+  JS client (`@supabase/ssr`). Kod: `web/`.
+  - 5 sekme gerçek CRUD ile çalışıyor: Genel Bakış (salt okunur özet),
+    Hesaplar, Bütçe, Portföy (lot bazlı, ağırlıklı ortalama maliyetle —
+    `backend/app/services/cost_basis_engine.py`'deki tam FIFO motoru
+    henüz TS'ye taşınmadı), Zekât (gayrimenkul + kredi/taksit CRUD'u ve
+    canlı hesaplama; fıkhi "havl" — bir kameri yıl sahiplik şartı —
+    otomatik izlenmiyor, kullanıcı beyanına dayanıyor).
+  - Next.js 16'da `middleware.ts` → `proxy.ts` olarak değişti (dosya adı
+    ve export edilen fonksiyon adı); bu proje o isimlendirmeyi kullanıyor.
+- **Backend/Worker (FastAPI + Celery + Redis + TCMB/TEFAS entegrasyonu)**:
+  henüz gerçek bir servise bağlanmadı — bu oturumda kapsam bilinçli olarak
+  "Web MVP" ile sınırlı tutuldu (Supabase zaten Postgres+Auth+Storage
+  sağladığı için basit CRUD'lar doğrudan Next.js server action'larından
+  Supabase'e yazılıyor). `backend/` altındaki kod (maliyet motoru, zekat
+  motoru, testler) hâlâ geçerli ve ileride ya bir Railway servisine ya da
+  Supabase Edge Functions'a taşınabilir.
+- **Barındırma**: GitHub reposu `abtaylan/aile-finans` (public) oluşturuldu.
+  Vercel bağlantısı ve ilk deploy bu oturumun kalan adımı.
+- **Fiyat verisi**: TCMB/TEFAS otomatik besleme henüz yok; Portföy
+  sayfasında "Fiyat Güncelle" ile manuel fiyat girilip
+  `asset_price_history` tablosuna `source='manual'` olarak yazılıyor.
+
+
 ## 1. Genel Bakış
 
 Sistem dört ana bileşenden oluşur: **API sunucusu** (FastAPI), **web istemcisi**
