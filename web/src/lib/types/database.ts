@@ -203,3 +203,48 @@ export interface Budget {
   planned_amount: number;
   currency: string;
 }
+
+// Kredi kartı ekstresi (roadmap #3). `source: "manual"` elle girilen
+// ekstreleri, `source: "upload"` ise ileride eklenecek PDF/CSV yükleme
+// akışını (adım 3, henüz yok) işaretler.
+export type StatementUploadStatus = "pending" | "processing" | "completed" | "failed";
+export type StatementSource = "upload" | "manual";
+
+export interface BankStatementUpload {
+  id: string;
+  family_id: string;
+  account_id: string | null;
+  uploaded_by_user_id: string | null;
+  file_name: string | null;
+  storage_path: string | null;
+  file_type: string | null;
+  source: StatementSource;
+  period_start: string | null;
+  period_end: string | null;
+  minimum_payment_amount: number | null;
+  payment_due_date: string | null;
+  statement_total_amount: number | null;
+  status: StatementUploadStatus;
+  extracted_transaction_count: number;
+  error_message: string | null;
+}
+
+// Ekstre kalemi. Taksitli alışverişlerde `amount` o ay ekstreye yansıyan
+// tutardır (gerçek ekstredeki gibi) — `installment_label` yalnızca "3/6"
+// gibi bilgilendirme etiketidir, ileride otomatik ay bölme yapılmıyor.
+export interface BankStatementStagingTransaction {
+  id: number;
+  upload_id: string;
+  raw_description: string;
+  transaction_date: string;
+  amount: number;
+  direction: "income" | "expense";
+  installment_label: string | null;
+  suggested_category_id: string | null;
+  is_confirmed: boolean;
+  matched_transaction_id: string | null;
+}
+
+export interface StatementWithItems extends BankStatementUpload {
+  items: BankStatementStagingTransaction[];
+}

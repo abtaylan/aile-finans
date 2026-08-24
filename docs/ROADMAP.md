@@ -24,7 +24,7 @@ yazmaya gerek yok:
 ## Şimdi (sıradaki)
 
 Test sırasında fark edilen somut boşluklar — günlük kullanımı engelleyen eksikler.
-Sıradaki: #3 (kredi kartı ekstresi girişi).
+Sıradaki: #4 (elle açık/koyu tema anahtarı).
 
 ### 1. Profil / Hesap Ayarları sayfası — ✅ tamamlandı (2026-08-24)
 - Yeni rota: `/profil` — ad soyad, e-posta (salt okunur), dil/locale güncelleme
@@ -64,11 +64,30 @@ Yeni rota: `/aile`. `users.role` artık gerçekten kontrol ediliyor.
   auth hesapları etkilenmez — bir sonraki girişte onboarding'e düşerler).
   owner/admin `/aile/disa-aktar`'dan tüm aile verisini JSON olarak indirebilir.
 
-### 3. Kredi kartı ekstresi girişi
-`bank_statement_uploads` tablosu şemada var ama hiçbir UI kullanmıyor.
-- 1. adım: manuel ekstre kalemi girişi (tarih, açıklama, tutar, taksit)
-- 2. adım: ekstre dönemi özeti (asgari tutar, son ödeme tarihi) Hesaplar'da göster
-- 3. adım (büyük iş): PDF/CSV ekstre yükleyip otomatik satır ayrıştırma
+### 3. Kredi kartı ekstresi girişi — 1. ve 2. adım ✅ tamamlandı (2026-08-24)
+`bank_statement_uploads` tablosu şemada vardı ama hiçbir UI kullanmıyordu.
+Manuel giriş için aynı tablo (+ `bank_statement_staging_transactions`)
+genişletildi — adım 3 (aşağıda) geldiğinde ayrıştırma sonucu çıkan satırlar
+da aynı "onay → gerçek transactions kaydı" akışından geçecek.
+- Yeni rota: `/hesaplar/[id]/ekstre` — yalnızca `credit_card` tipi hesaplarda
+  görünür (Hesaplar'daki hesap kartında "Ekstreler" butonu).
+- **Ekstre dönemi**: ay, asgari ödeme tutarı, son ödeme tarihi, (opsiyonel)
+  toplam ekstre tutarı — `bank_statement_uploads`'a yeni sütunlar eklendi
+  (`source`, `minimum_payment_amount`, `payment_due_date`,
+  `statement_total_amount`; `file_name`/`storage_path`/`file_type` artık
+  yalnızca `source='upload'` için zorunlu — CHECK constraint ile).
+- **Ekstre kalemi girişi**: tarih, açıklama, tutar, taksit etiketi (ör.
+  "3/6" — otomatik ay bölme yapılmıyor, ekstredeki gibi o ayki tutar
+  girilir). `bank_statement_staging_transactions`'a `installment_label`
+  sütunu eklendi. Her kalem eklendiğinde otomatik olarak gerçek bir
+  `transactions` kaydı oluşturuluyor ve hesabın `current_balance`'ı
+  güncelleniyor (Bütçe'deki gider/gelir mantığıyla aynı işaret kuralı);
+  ekstre veya kalem silindiğinde bağlı transaction da silinip bakiye
+  tersine çevriliyor.
+- **Hesaplar'da özet** (2. adım): kredi kartı hesap kartında en güncel
+  ekstrenin asgari ödeme tutarı + son ödeme tarihi gösteriliyor.
+- 3. adım (PDF/CSV otomatik ayrıştırma, büyük iş) bilinçli olarak
+  ertelendi — aşağıya *17* olarak eklendi.
 
 ### 4. Elle açık/koyu tema anahtarı
 Koyu tema CSS'i tamamen hazır ama tetikleyecek arayüz yok.
@@ -126,6 +145,18 @@ sayfası hiç kullanmıyor.
 - `loans.linked_account_id` formda yok — krediyi hesaba bağla
 - Zekât hesaplamaları `zakat_calculations`'a kaydedilmiyor — geçmiş yıl karşılaştırması yok
 - `budgets` tablosu hiç kullanılmıyor — kategori bazlı aylık hedef/limit yok
+
+### 17. Kredi kartı ekstresi: PDF/CSV otomatik ayrıştırma
+#3'ün ertelenen 3. adımı. Manuel giriş (1+2, tamamlandı) zaten aynı
+tabloları kullanıyor — bu iş yalnızca `bank_statement_uploads` (source=
+'upload') + `bank_statement_staging_transactions`'ı bir ayrıştırma
+motoruyla doldurup kullanıcıya onay ekranı sunmak.
+- Dosya yükleme (Supabase Storage'a) + `file_type`'a göre PDF/CSV ayrıştırma
+- Aday satırları `bank_statement_staging_transactions`'a yaz, kategori
+  öner (`suggested_category_id`)
+- Onay ekranı: kullanıcı satır satır onaylar/düzenler/reddeder —
+  onaylananlar manuel akıştaki `addStatementItemAction` ile aynı şekilde
+  gerçek `transactions` kaydına dönüşür
 
 ---
 

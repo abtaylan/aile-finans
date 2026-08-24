@@ -1,12 +1,13 @@
 "use client";
 
-import { Trash2, Landmark } from "lucide-react";
+import Link from "next/link";
+import { Trash2, Landmark, FileText } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, formatDate } from "@/lib/utils";
 import { deleteAccountAction } from "./actions";
 import { AccountDialog } from "./account-dialog";
-import type { Account } from "@/lib/types/database";
+import type { Account, BankStatementUpload } from "@/lib/types/database";
 
 const ACCOUNT_TYPE_LABELS: Record<string, string> = {
   checking: "Vadesiz Hesap",
@@ -17,7 +18,13 @@ const ACCOUNT_TYPE_LABELS: Record<string, string> = {
   loan: "Kredi Hesabı",
 };
 
-export function AccountsClient({ accounts }: { accounts: Account[] }) {
+export function AccountsClient({
+  accounts,
+  latestStatements = {},
+}: {
+  accounts: Account[];
+  latestStatements?: Record<string, BankStatementUpload>;
+}) {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
@@ -84,6 +91,36 @@ export function AccountsClient({ accounts }: { accounts: Account[] }) {
               )}
               {account.iban && (
                 <p className="text-xs text-[var(--text-muted)]">{account.iban}</p>
+              )}
+              {account.account_type === "credit_card" && (
+                <div className="flex flex-col gap-2 border-t border-[var(--border)] pt-3">
+                  {latestStatements[account.id] ? (
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[var(--text-secondary)]">
+                      {latestStatements[account.id].minimum_payment_amount != null && (
+                        <span>
+                          Asgari:{" "}
+                          {formatCurrency(
+                            latestStatements[account.id].minimum_payment_amount!,
+                            account.currency
+                          )}
+                        </span>
+                      )}
+                      {latestStatements[account.id].payment_due_date && (
+                        <span>
+                          Son Ödeme: {formatDate(latestStatements[account.id].payment_due_date!)}
+                        </span>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-[var(--text-muted)]">Henüz ekstre girilmedi.</p>
+                  )}
+                  <Button asChild variant="outline" size="sm" className="w-full">
+                    <Link href={`/hesaplar/${account.id}/ekstre`}>
+                      <FileText className="h-4 w-4" />
+                      Ekstreler
+                    </Link>
+                  </Button>
+                </div>
               )}
             </Card>
           ))}

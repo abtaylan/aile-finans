@@ -1,6 +1,6 @@
 import { requireFamilyContext } from "@/lib/auth-context";
 import { AccountsClient } from "./accounts-client";
-import type { Account } from "@/lib/types/database";
+import type { Account, BankStatementUpload } from "@/lib/types/database";
 
 export default async function HesaplarPage() {
   const { supabase, profile } = await requireFamilyContext();
@@ -13,5 +13,26 @@ export default async function HesaplarPage() {
     .order("display_order", { ascending: true })
     .order("created_at", { ascending: true });
 
-  return <AccountsClient accounts={(accounts as Account[]) ?? []} />;
+  const typedAccounts = (accounts as Account[]) ?? [];
+  const creditCardIds = typedAccounts
+    .filter((a) => a.account_type === "credit_card")
+    .map((a) => a.id);
+
+  // Her kredi kartı hesabı için en güncel ekstre (Hesaplar'da özet göstermek
+  // üzere) — bkz. roadmap #3, adım 2.
+  const latestStatements: Record<string, BankStatementUpload> = {};
+  if (creditCardIds.length > 0) {
+    const { data: statements } = await supabase
+      .from("bank_statement_uploads")
+      .select("*")
+      .in("account_id", creditCardIds)
+      .order("period_end", { ascending: false });
+    for (const statement of (statements as BankStatementUpload[]) ?? []) {
+      if (statement.account_id && !latestStatements[statement.account_id]) {
+        latestStatements[statement.account_id] = statement;
+      }
+    }
+  }
+
+  return <AccountsClient accounts={typedAccounts} latestStatements={latestStatements} />;
 }
