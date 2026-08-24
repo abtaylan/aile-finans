@@ -59,6 +59,16 @@ export function ProfileClient({
     router.refresh();
   }
 
+  async function handleUpdateProfile(formData: FormData) {
+    await updateProfileAction(formData);
+    router.refresh();
+  }
+
+  async function handleUpdateFamily(formData: FormData) {
+    await updateFamilyAction(formData);
+    router.refresh();
+  }
+
   return (
     <div className="flex flex-col gap-4">
       <div>
@@ -78,7 +88,7 @@ export function ProfileClient({
           </CardTitle>
         </CardHeader>
         <CardContent className="pt-0">
-          <form action={updateProfileAction} className="flex flex-col gap-4">
+          <form action={handleUpdateProfile} className="flex flex-col gap-4">
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="fullName">Ad Soyad</Label>
@@ -127,7 +137,7 @@ export function ProfileClient({
           </CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-5 pt-0">
-          <form action={updateFamilyAction} className="flex flex-col gap-3 sm:w-1/2 sm:pr-1.5">
+          <form action={handleUpdateFamily} className="flex flex-col gap-3 sm:w-1/2 sm:pr-1.5">
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="familyName">Aile Adı</Label>
               <Input
