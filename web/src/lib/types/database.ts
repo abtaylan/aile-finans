@@ -23,6 +23,14 @@ export type LoanType =
   | "diger";
 export type NisabBasis = "gold" | "silver";
 
+// Aile içi rol hiyerarşisi. Yalnızca owner/admin yönetimsel işlem yapabilir
+// (üye davet/çıkarma, rol atama, kategori yönetimi, aile ayarları) — bkz.
+// database/schema_v2_rls.sql ve migration `family_role_management_and_invites`.
+export type MemberRole = "owner" | "admin" | "member" | "viewer";
+
+// Davet akışında owner rolü asla verilmez (bkz. chk_family_invites_role).
+export type InvitableRole = Exclude<MemberRole, "owner">;
+
 export interface Family {
   id: string;
   name: string;
@@ -35,8 +43,26 @@ export interface UserProfile {
   family_id: string;
   email: string;
   full_name: string;
-  role: "owner" | "admin" | "member" | "viewer";
+  role: MemberRole;
   locale: string;
+}
+
+export interface FamilyMember {
+  id: string;
+  full_name: string;
+  email: string;
+  role: MemberRole;
+}
+
+export interface FamilyInvite {
+  id: string;
+  family_id: string;
+  email: string;
+  role: InvitableRole;
+  token: string;
+  status: "pending" | "accepted";
+  created_at: string;
+  expires_at: string;
 }
 
 export interface Account {

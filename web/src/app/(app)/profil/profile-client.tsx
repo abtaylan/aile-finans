@@ -1,13 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { User, Users, LogOut, Monitor, Globe2 } from "lucide-react";
+import { User, Users, LogOut, Monitor, Globe2, ArrowRight } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -18,7 +18,6 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import { updateProfileAction, updateFamilyAction } from "./actions";
 import type { Family, UserProfile } from "@/lib/types/database";
-import type { FamilyMember } from "./page";
 
 const LOCALE_LABELS: Record<string, string> = {
   "tr-TR": "Türkçe",
@@ -32,24 +31,18 @@ const ROLE_LABELS: Record<string, string> = {
   viewer: "İzleyici",
 };
 
-const ROLE_BADGE_VARIANT: Record<string, "default" | "secondary" | "outline"> = {
-  owner: "default",
-  admin: "secondary",
-  member: "outline",
-  viewer: "outline",
-};
-
 export function ProfileClient({
   profile,
   family,
-  members,
+  memberCount,
 }: {
   profile: UserProfile;
   family: Family | null;
-  members: FamilyMember[];
+  memberCount: number;
 }) {
   const router = useRouter();
   const [signingOut, setSigningOut] = useState<"local" | "global" | null>(null);
+  const isAdmin = profile.role === "owner" || profile.role === "admin";
 
   async function handleSignOut(scope: "local" | "global") {
     setSigningOut(scope);
@@ -137,54 +130,49 @@ export function ProfileClient({
           </CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-5 pt-0">
-          <form action={handleUpdateFamily} className="flex flex-col gap-3 sm:w-1/2 sm:pr-1.5">
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="familyName">Aile Adı</Label>
-              <Input
-                id="familyName"
-                name="familyName"
-                defaultValue={family?.name ?? ""}
-                placeholder="Örn. Yılmaz Ailesi"
-                required
-              />
+          {isAdmin ? (
+            <form action={handleUpdateFamily} className="flex flex-col gap-3 sm:w-1/2 sm:pr-1.5">
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="familyName">Aile Adı</Label>
+                <Input
+                  id="familyName"
+                  name="familyName"
+                  defaultValue={family?.name ?? ""}
+                  placeholder="Örn. Yılmaz Ailesi"
+                  required
+                />
+              </div>
+              <div>
+                <Button type="submit" variant="secondary">
+                  Kaydet
+                </Button>
+              </div>
+            </form>
+          ) : (
+            <div className="flex flex-col gap-1 sm:w-1/2 sm:pr-1.5">
+              <Label>Aile Adı</Label>
+              <p className="text-sm text-[var(--text-primary)]">{family?.name ?? "—"}</p>
+              <p className="text-xs text-[var(--text-muted)]">
+                Aile adını yalnızca sahip veya yöneticiler değiştirebilir.
+              </p>
             </div>
-            <div>
-              <Button type="submit" variant="secondary">
-                Kaydet
-              </Button>
-            </div>
-          </form>
+          )}
 
-          <div className="flex flex-col gap-1">
-            <p className="text-sm font-medium text-[var(--text-primary)]">Aile Üyeleri</p>
-            <p className="mb-2 text-xs text-[var(--text-secondary)]">
-              Üye ekleme, çıkarma ve rol atama yakında eklenecek.
-            </p>
-            <div className="flex flex-col divide-y divide-[var(--border)]">
-              {members.map((member) => (
-                <div key={member.id} className="flex items-center justify-between gap-2 py-2.5">
-                  <div className="flex items-center gap-3">
-                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--surface-2)] text-xs font-medium text-[var(--text-secondary)]">
-                      {member.full_name.slice(0, 1).toUpperCase()}
-                    </span>
-                    <div>
-                      <p className="text-sm font-medium text-[var(--text-primary)]">
-                        {member.full_name}
-                        {member.id === profile.id && (
-                          <span className="ml-1.5 text-xs font-normal text-[var(--text-muted)]">
-                            (sen)
-                          </span>
-                        )}
-                      </p>
-                      <p className="text-xs text-[var(--text-secondary)]">{member.email}</p>
-                    </div>
-                  </div>
-                  <Badge variant={ROLE_BADGE_VARIANT[member.role] ?? "outline"}>
-                    {ROLE_LABELS[member.role] ?? member.role}
-                  </Badge>
-                </div>
-              ))}
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-[var(--border)] p-3">
+            <div>
+              <p className="text-sm font-medium text-[var(--text-primary)]">
+                {memberCount} üye · sen {ROLE_LABELS[profile.role] ?? profile.role} rolündesin
+              </p>
+              <p className="text-xs text-[var(--text-secondary)]">
+                Üye davet etme, rol atama ve kategori yönetimi Aile sayfasında.
+              </p>
             </div>
+            <Button variant="outline" asChild>
+              <Link href="/aile">
+                Aile Yönetimi
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </Button>
           </div>
         </CardContent>
       </Card>

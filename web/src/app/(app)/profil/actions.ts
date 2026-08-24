@@ -32,6 +32,10 @@ export async function updateProfileAction(formData: FormData) {
 export async function updateFamilyAction(formData: FormData) {
   const { supabase, profile } = await requireFamilyContext();
 
+  if (profile.role !== "owner" && profile.role !== "admin") {
+    throw new Error("Aile adını yalnızca sahip veya yöneticiler değiştirebilir.");
+  }
+
   const name = String(formData.get("familyName") || "").trim();
 
   if (!name) {

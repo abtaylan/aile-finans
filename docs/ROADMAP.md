@@ -6,29 +6,63 @@ değerlendirmesi; itiraz edilirse değiştirilir. Canlı: aile-finans-mu.vercel.
 
 Detaylı, görsel versiyon: https://claude.ai/code/artifact/41c85b40-4927-46ff-92b9-e6f1e556ea43
 
+## Ortam
+
+Yeni bir sohbette klasör bağlantısı sıfırdan başladığı ve bu bilgiler bu
+dosyada geçmediği için buraya not edildi — yeni sohbete ayrıca elle
+yazmaya gerek yok:
+
+- Repo yolu: `C:\Users\ytt\OneDrive\Masaüstü\PROJELER\Aile Finans Yönetimi\aile-finans`
+  (klasör bağlantısını yeni sohbette onaylaman gerekir — masaüstü uygulaması sorar)
+- Canlı: aile-finans-mu.vercel.app
+- Test hesabı: `test@ailefinans.app` / `123456`
+- Supabase projesi (`aile-finans`, ref `ejcjwlubpwvppxmypvxq`) MCP üzerinden
+  otomatik bulunuyor, ayrıca belirtmeye gerek yok.
+
 ---
 
 ## Şimdi (sıradaki)
 
 Test sırasında fark edilen somut boşluklar — günlük kullanımı engelleyen eksikler.
-Sıradaki: #2 (aile içi yönetim).
+Sıradaki: #3 (kredi kartı ekstresi girişi).
 
 ### 1. Profil / Hesap Ayarları sayfası — ✅ tamamlandı (2026-08-24)
 - Yeni rota: `/profil` — ad soyad, e-posta (salt okunur), dil/locale güncelleme
-- Aile bilgisi: aile adı düzenleme, aile üyelerinin listesi (salt okunur — üye
-  ekleme/çıkarma/rol atama #2'de)
+- Aile bilgisi: aile adı düzenleme (artık owner/admin ile sınırlı, bkz. #2),
+  üye sayısı özeti + `/aile` sayfasına link
 - Oturum yönetimi: bu cihazdan çıkış + tüm cihazlardan çıkış (Supabase
   `signOut({ scope })`; ayrı bir "aktif cihazlar" tablosu yok, bu yeterli)
 - Üst barda ad-soyad artık `/profil`'e bağlı bir link (`app-shell.tsx`)
 
-### 2. Aile içi yönetim (üyeler, roller, kategoriler)
-`users.role` (owner/admin/member/viewer) şemada tanımlı ama hiçbir yerde
-kontrol edilmiyor. Platform süper-admin'den ayrı: bu, her ailenin kendi
-self-servis ayarları.
-- Aile üyesi davet etme / çıkarma, rol atama
-- Kategori yönetimi (ekle/sil/yeniden adlandır)
-- Rol bazlı yetki kontrolü (viewer düzenleyemesin vb.)
-- Aile silme / dışa aktarma
+### 2. Aile içi yönetim (üyeler, roller, kategoriler) — ✅ tamamlandı (2026-08-24)
+Yeni rota: `/aile`. `users.role` artık gerçekten kontrol ediliyor.
+- **Üye davet etme**: owner/admin e-posta + rol (admin/member/viewer) girip
+  davet oluşturur (`family_invites` tablosu). Gerçek SMTP altyapısı henüz
+  yok (#7) — otomatik e-posta GÖNDERİLMİYOR; davet linki (`/davet/[token]`)
+  panoya kopyalanıp elle paylaşılıyor. Kişi o e-postayla giriş yaptığında
+  (OTP ile hesap otomatik açılır) onboarding'de bekleyen davet otomatik
+  kabul edilir (`accept_my_pending_invite()` RPC, e-posta eşleşmesiyle).
+- **Üye çıkarma**: `admin.auth.admin.deleteUser()` ile auth hesabı silinir
+  (public.users satırı CASCADE ile gider, diğer tablolardaki referanslar
+  SET NULL ile korunur). Son owner çıkarılamaz; admin, owner/admin'i
+  çıkaramaz.
+- **Rol atama**: owner her rolü değiştirebilir; admin sadece member/viewer
+  arasında değiştirebilir. `users.role/family_id/is_active` alanları artık
+  bir DB trigger'ıyla korunuyor (`guard_user_privileged_fields`) — normal
+  istemci bu alanları asla doğrudan UPDATE edemez, yalnızca service-role
+  (yetki kontrolünden SONRA, sunucu action'larında) değiştirebilir.
+- **Kategori yönetimi**: ekle/yeniden adlandır/sil, owner/admin ile sınırlı
+  (RLS + action seviyesinde çift kontrol).
+- **Rol bazlı yetki kontrolü**: kategori CRUD ve aile ayarları (isim
+  değişikliği) RLS'te owner/admin'e kilitlendi. Not: bu kısıtlama şu an
+  yalnızca üye/rol/kategori/aile-ayarları kapsamında — hesaplar,
+  işlemler, bütçe, portföy gibi diğer modüllerde viewer/member ayrımı
+  henüz yok (kapsamlı bir "salt okunur viewer" politikası ayrı bir iş
+  olarak ele alınmalı, aşağıya *16* olarak eklendi).
+- **Aile silme / dışa aktarma**: owner, ailenin adını yazarak onaylayıp
+  kalıcı silebilir (CASCADE ile tüm veriler gider, diğer üyelerin
+  auth hesapları etkilenmez — bir sonraki girişte onboarding'e düşerler).
+  owner/admin `/aile/disa-aktar`'dan tüm aile verisini JSON olarak indirebilir.
 
 ### 3. Kredi kartı ekstresi girişi
 `bank_statement_uploads` tablosu şemada var ama hiçbir UI kullanmıyor.
@@ -56,11 +90,18 @@ kullanıcılar öncesinde mutlaka bitmeli.
 
 ### 6. Güvenlik sertleştirme (Supabase advisor uyarıları)
 - `citext` uzantısını public şemadan ayrı şemaya taşı
-- `current_family_id()` RPC'sinin `authenticated` rolünce çağrılabilirliğini gözden geçir
+- `current_family_id()` (ve #2 ile eklenen `current_user_role()`,
+  `get_invite_preview()`, `accept_my_pending_invite()`) RPC'lerinin
+  `authenticated`/`anon` rolünce çağrılabilirliğini gözden geçir —
+  şu an hepsi bilinçli olarak `current_family_id()` ile aynı örüntüde
+  (fonksiyon içi kontrolle güvenli, ama advisor'da WARN görünüyorlar)
 - Supabase Auth "sızmış şifre" korumasını aç (şifre eklenirse)
 
 ### 7. Gerçek e-posta altyapısı
 Supabase'in yerleşik e-posta gönderimi saatte birkaç mesajla sınırlı.
+Bu yüzden #2'deki aile daveti şu an e-posta GÖNDERMİYOR, link kopyala/
+paylaş şeklinde çalışıyor — bu altyapı kurulunca otomatik davet e-postası
+gönderimi eklenebilir.
 - Özel SMTP sağlayıcı bağla (Resend / Postmark / SES)
 - Gönderen alan adını doğrula (SPF/DKIM)
 
@@ -129,6 +170,13 @@ Orijinal planın geri kalanı — Web MVP kararıyla bilinçli ertelendi.
 - FastAPI + Celery + Redis (Railway) — worker işleri Edge Functions'a mı taşınacak, karar bekliyor
 - Özel alan adı satın alma (ödeme onayı gerektirir)
 - iOS/Android uygulamaları (React Native / Expo)
+
+### 16. Genel "salt okunur viewer" politikası
+#2 kapsamında viewer/member ayrımı yalnızca üye/rol/kategori/aile-ayarları
+için uygulandı. Hesaplar, işlemler, bütçe, portföy, zekât gibi diğer
+modüllerde henüz herkes (viewer dahil) yazabiliyor. Bunu tek bir tutarlı
+politika olarak (RLS + UI) tüm modüllere yaymak ayrı, dikkatli bir iş —
+her modülün action'ları ayrı ayrı gözden geçirilmeli.
 
 ---
 

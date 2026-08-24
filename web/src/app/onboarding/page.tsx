@@ -22,6 +22,13 @@ export default async function OnboardingPage() {
     redirect("/");
   }
 
+  // E-postasına bekleyen bir aile daveti varsa otomatik olarak o aileye
+  // katılır — bu durumda yeni bir aile oluşturma formu hiç gösterilmez.
+  const { data: joinedFamilyId } = await supabase.rpc("accept_my_pending_invite");
+  if (joinedFamilyId) {
+    redirect("/");
+  }
+
   const defaultFullName =
     (user.user_metadata?.full_name as string | undefined) ?? "";
 

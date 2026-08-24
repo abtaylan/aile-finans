@@ -1,13 +1,11 @@
 import { requireFamilyContext } from "@/lib/auth-context";
 import { ProfileClient } from "./profile-client";
-import type { Family, UserProfile } from "@/lib/types/database";
-
-export type FamilyMember = Pick<UserProfile, "id" | "full_name" | "email" | "role">;
+import type { Family } from "@/lib/types/database";
 
 export default async function ProfilPage() {
   const { supabase, profile } = await requireFamilyContext();
 
-  const [{ data: family }, { data: members }] = await Promise.all([
+  const [{ data: family }, { count: memberCount }] = await Promise.all([
     supabase
       .from("families")
       .select("id, name, base_currency, timezone")
@@ -15,17 +13,11 @@ export default async function ProfilPage() {
       .maybeSingle<Family>(),
     supabase
       .from("users")
-      .select("id, full_name, email, role")
-      .eq("family_id", profile.family_id)
-      .order("created_at", { ascending: true })
-      .returns<FamilyMember[]>(),
+      .select("id", { count: "exact", head: true })
+      .eq("family_id", profile.family_id),
   ]);
 
   return (
-    <ProfileClient
-      profile={profile}
-      family={family ?? null}
-      members={members ?? []}
-    />
+    <ProfileClient profile={profile} family={family ?? null} memberCount={memberCount ?? 1} />
   );
 }

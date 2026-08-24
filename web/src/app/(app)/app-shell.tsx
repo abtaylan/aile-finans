@@ -10,6 +10,7 @@ import {
   HandCoins,
   LogOut,
   User,
+  Users,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
@@ -20,6 +21,7 @@ const NAV_ITEMS = [
   { href: "/butce", label: "Bütçe", icon: PiggyBank },
   { href: "/portfoy", label: "Portföy", icon: LineChart },
   { href: "/zekat", label: "Zekât", icon: HandCoins },
+  { href: "/aile", label: "Aile", icon: Users },
 ];
 
 export function AppShell({
@@ -96,7 +98,7 @@ export function AppShell({
           </div>
         </div>
         {/* Mobil sekme çubuğu */}
-        <nav className="border-t border-[var(--border)] px-2 py-1.5 md:hidden">
+        <nav className="border-t border-[var(--border)] px-1 py-1.5 md:hidden">
           <ul className="flex items-center justify-between">
             {NAV_ITEMS.map((item) => {
               const active =
@@ -106,7 +108,7 @@ export function AppShell({
                   <Link
                     href={item.href}
                     className={cn(
-                      "flex flex-col items-center gap-0.5 rounded-lg px-2 py-1 text-[10px] font-medium text-[var(--text-secondary)]",
+                      "flex flex-col items-center gap-0.5 rounded-lg px-1.5 py-1 text-[10px] font-medium text-[var(--text-secondary)]",
                       active && "text-[var(--brand)]"
                     )}
                   >

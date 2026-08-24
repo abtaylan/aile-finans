@@ -1,19 +1,24 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { Suspense, useActionState, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { sendOtpAction, verifyOtpAction, type OtpState } from "./actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-const initialState: OtpState = { step: "email", email: "", error: null, info: null };
+const baseState: OtpState = { step: "email", email: "", error: null, info: null };
 
-export default function GirisPage() {
+function GirisPageInner() {
+  const searchParams = useSearchParams();
+  const prefillEmail = searchParams.get("email") ?? "";
+  const initialState: OtpState = { ...baseState, email: prefillEmail };
+
   const [emailState, sendAction, sendPending] = useActionState(sendOtpAction, initialState);
   const [codeState, verifyAction, verifyPending] = useActionState(verifyOtpAction, initialState);
   const [step, setStep] = useState<"email" | "code">("email");
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(prefillEmail);
 
   // Sunucu action'ları her tamamlandığında (render sırasında, effect içinde DEĞİL —
   // bkz. React "adjusting state when a prop changes" deseni) yerel adım/e-posta
@@ -106,5 +111,13 @@ export default function GirisPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function GirisPage() {
+  return (
+    <Suspense fallback={null}>
+      <GirisPageInner />
+    </Suspense>
   );
 }
