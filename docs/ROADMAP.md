@@ -18,13 +18,20 @@ yazmaya gerek yok:
 - Test hesabı: `test@ailefinans.app` / `123456`
 - Supabase projesi (`aile-finans`, ref `ejcjwlubpwvppxmypvxq`) MCP üzerinden
   otomatik bulunuyor, ayrıca belirtmeye gerek yok.
+- **Git**: Claude'un cihazda shell erişimi yok — sadece dosya okuyup/yazabiliyor
+  (device bridge ile) ve Supabase migration'ı MCP ile uygulayabiliyor. Kod
+  değişikliği yapılan HER oturumun sonunda, kullanıcı istemeden bile, çalıştırılacak
+  `git add / commit / push` komutları eksiksiz verilmeli (kopyala-yapıştır
+  hazır, repo yolunu içeren `cd` dahil) — bu adım daha önce birkaç kez
+  atlandı, bir daha atlanmasın.
 
 ---
 
 ## Şimdi (sıradaki)
 
 Test sırasında fark edilen somut boşluklar — günlük kullanımı engelleyen eksikler.
-Sıradaki: #4 (elle açık/koyu tema anahtarı).
+"Şimdi" bölümündeki tüm işler tamamlandı. Sıradaki: #5 (OTP test kısayolunu
+kapat, kalıcı kimlik doğrulamaya geç — "Prod'a çıkmadan önce zorunlu" bölümü).
 
 ### 1. Profil / Hesap Ayarları sayfası — ✅ tamamlandı (2026-08-24)
 - Yeni rota: `/profil` — ad soyad, e-posta (salt okunur), dil/locale güncelleme
@@ -89,10 +96,26 @@ da aynı "onay → gerçek transactions kaydı" akışından geçecek.
 - 3. adım (PDF/CSV otomatik ayrıştırma, büyük iş) bilinçli olarak
   ertelendi — aşağıya *17* olarak eklendi.
 
-### 4. Elle açık/koyu tema anahtarı
-Koyu tema CSS'i tamamen hazır ama tetikleyecek arayüz yok.
-- Üst barda güneş/ay ikonlu anahtar
-- Seçimi `data-theme` + localStorage ile kalıcı yap
+### 4. Elle açık/koyu tema anahtarı — ✅ tamamlandı (2026-08-24)
+Koyu tema CSS'i zaten hazırdı, tetikleyecek arayüz eklendi.
+- Üst barda güneş/ay ikonlu anahtar (`ThemeToggle`, `src/components/theme-toggle.tsx`),
+  `app-shell.tsx` üst çubuğunda profil linkinin solunda.
+- Seçim `<html data-theme>` attribute'u + `localStorage` (`theme` anahtarı,
+  `"light"`/`"dark"`) ile kalıcı. `globals.css`'teki mevcut üç katmanlı kural
+  (açık varsayılan, `prefers-color-scheme: dark` sistem tercihi, açık
+  `data-theme` override'ı) hiç değiştirilmedi — anahtar sadece bu attribute'u
+  set ediyor.
+- İlk boyamadan önce flash olmaması için `layout.tsx`'in `<head>`'ine inline
+  script eklendi (kayıtlı tercihi localStorage'dan okuyup `data-theme`'i
+  React hydrate olmadan önce set ediyor — Next'in "preventing flash before
+  hydration" rehberindeki örüntü). `<html>`'e `suppressHydrationWarning`
+  eklendi çünkü script DOM'u React'ten önce değiştirebiliyor.
+- Güneş/ay ikonu geçişi tamamen CSS ile (`.theme-toggle-sun`/`.theme-toggle-moon`,
+  `globals.css`) — React state'e bağlı değil, bu yüzden hydration uyuşmazlığı
+  riski yok; tıklama sadece `data-theme` attribute'unu ve localStorage'ı
+  güncelliyor, CSS geri kalanını hallediyor.
+- Kayıtlı tercih yoksa (ilk ziyaret) attribute set edilmiyor — sistem/tarayıcı
+  tercihi (`prefers-color-scheme`) geçerli oluyor, tıpkı öncesinde olduğu gibi.
 
 ---
 
@@ -146,18 +169,6 @@ sayfası hiç kullanmıyor.
 - Zekât hesaplamaları `zakat_calculations`'a kaydedilmiyor — geçmiş yıl karşılaştırması yok
 - `budgets` tablosu hiç kullanılmıyor — kategori bazlı aylık hedef/limit yok
 
-### 17. Kredi kartı ekstresi: PDF/CSV otomatik ayrıştırma
-#3'ün ertelenen 3. adımı. Manuel giriş (1+2, tamamlandı) zaten aynı
-tabloları kullanıyor — bu iş yalnızca `bank_statement_uploads` (source=
-'upload') + `bank_statement_staging_transactions`'ı bir ayrıştırma
-motoruyla doldurup kullanıcıya onay ekranı sunmak.
-- Dosya yükleme (Supabase Storage'a) + `file_type`'a göre PDF/CSV ayrıştırma
-- Aday satırları `bank_statement_staging_transactions`'a yaz, kategori
-  öner (`suggested_category_id`)
-- Onay ekranı: kullanıcı satır satır onaylar/düzenler/reddeder —
-  onaylananlar manuel akıştaki `addStatementItemAction` ile aynı şekilde
-  gerçek `transactions` kaydına dönüşür
-
 ---
 
 ## Uzun vade (büyük kapsam)
@@ -208,6 +219,18 @@ için uygulandı. Hesaplar, işlemler, bütçe, portföy, zekât gibi diğer
 modüllerde henüz herkes (viewer dahil) yazabiliyor. Bunu tek bir tutarlı
 politika olarak (RLS + UI) tüm modüllere yaymak ayrı, dikkatli bir iş —
 her modülün action'ları ayrı ayrı gözden geçirilmeli.
+
+### 17. Kredi kartı ekstresi: PDF/CSV otomatik ayrıştırma
+#3'ün ertelenen 3. adımı. Manuel giriş (1+2, tamamlandı) zaten aynı
+tabloları kullanıyor — bu iş yalnızca `bank_statement_uploads` (source=
+'upload') + `bank_statement_staging_transactions`'ı bir ayrıştırma
+motoruyla doldurup kullanıcıya onay ekranı sunmak.
+- Dosya yükleme (Supabase Storage'a) + `file_type`'a göre PDF/CSV ayrıştırma
+- Aday satırları `bank_statement_staging_transactions`'a yaz, kategori
+  öner (`suggested_category_id`)
+- Onay ekranı: kullanıcı satır satır onaylar/düzenler/reddeder —
+  onaylananlar manuel akıştaki `addStatementItemAction` ile aynı şekilde
+  gerçek `transactions` kaydına dönüşür
 
 ---
 

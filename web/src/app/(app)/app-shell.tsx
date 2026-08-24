@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 const NAV_ITEMS = [
   { href: "/", label: "Genel Bakış", icon: LayoutDashboard },
@@ -75,6 +76,7 @@ export function AppShell({
             </ul>
           </nav>
           <div className="flex items-center gap-1.5">
+            <ThemeToggle />
             <Link
               href="/profil"
               className={cn(
