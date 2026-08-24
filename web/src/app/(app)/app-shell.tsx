@@ -9,6 +9,7 @@ import {
   LineChart,
   HandCoins,
   LogOut,
+  User,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
@@ -71,12 +72,22 @@ export function AppShell({
               })}
             </ul>
           </nav>
-          <div className="flex items-center gap-3">
-            <span className="hidden text-sm text-[var(--text-secondary)] sm:inline">
-              {fullName}
-            </span>
+          <div className="flex items-center gap-1.5">
+            <Link
+              href="/profil"
+              className={cn(
+                "flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-2)]",
+                pathname.startsWith("/profil") && "bg-[var(--surface-2)] text-[var(--text-primary)]"
+              )}
+            >
+              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[var(--surface-2)]">
+                <User className="h-3.5 w-3.5" />
+              </span>
+              <span className="hidden sm:inline">{fullName}</span>
+            </Link>
             <button
               onClick={handleSignOut}
+              aria-label="Çıkış"
               className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-2)]"
             >
               <LogOut className="h-4 w-4" />
