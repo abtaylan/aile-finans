@@ -117,6 +117,12 @@ export async function verifyLoginOtpAction(
 
   await markDeviceTrusted(supabase, data.user.id);
   await afterLoginRedirect(supabase);
+  // afterLoginRedirect her zaman redirect() ile fırlatır, buraya hiç
+  // ulaşılmaz — ama TS (async fonksiyon + Promise<never> zinciri
+  // üzerinden) bunu tüm yollarda ulaşılamaz olarak tanımıyor, derleme
+  // "fonksiyonun return'ü eksik" diye hata veriyordu (Vercel build'inde
+  // görüldü). Bu satır yalnızca tip kontrolünü memnun ediyor.
+  return { step: "otp", email, error: null, info: null };
 }
 
 export async function resetLoginStepAction(): Promise<LoginState> {

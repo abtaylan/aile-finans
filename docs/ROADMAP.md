@@ -25,17 +25,33 @@ yazmaya gerek yok:
   değişikliği yapılan HER oturumun sonunda, kullanıcı istemeden bile, çalıştırılacak
   `git add / commit / push` komutları eksiksiz verilmeli (kopyala-yapıştır
   hazır, repo yolunu içeren `cd` dahil) — bu adım daha önce birkaç kez
-  atlandı, bir daha atlanmasın.
+  atlandı, bir daha atlanmasın. Push sonrası GitHub→Vercel entegrasyonu
+  otomatik deploy tetikliyor, ayrıca bir şey yapmaya gerek yok.
+- **Vercel/Supabase dashboard**: Claude in Chrome (mcp__claude-in-chrome
+  araçları) bu oturumda kullanılabildi — Vercel'de env değişkeni eklendi,
+  redeploy tetiklendi, build log'u okunup hata teşhis edildi. Yeni bir
+  oturumda bu araçlar varsa (kullanıcının Chrome'unda uzantı açıksa) aynı
+  şekilde kullanılabilir; yoksa kullanıcıdan elle yapması istenmeli.
 
 ---
 
 ## Şimdi (sıradaki)
 
 Test sırasında fark edilen somut boşluklar — günlük kullanımı engelleyen eksikler.
-"Şimdi" bölümündeki tüm işler tamamlandı, #5 de dahil. Sıradaki: #6
-(güvenlik sertleştirme — "Prod'a çıkmadan önce zorunlu" bölümü) veya
-kullanıcı yeni eklenen marka/tasarım taleplerini (#18-20) önceliklendirmek
-isterse onlar.
+"Şimdi" bölümündeki tüm işler tamamlandı, #5 de dahil.
+
+**⚠️ Yeni sohbet buradan devam ediyorsa önce şunu kontrol et:** #5'in son
+commit'i (`web/src/app/giris/actions.ts`'de `verifyLoginOtpAction`'a eksik
+`return` düzeltmesi) push edilmiş mi? `git log --oneline -3` ile kontrol et
+— push edilmemişse önce onu yapmadan başka işe geçme (aşağıda #5'in sonunda
+tam detay ve git komutları var). Push edilene kadar Vercel prod'da hâlâ bir
+önceki başarılı build (SITE_URL yeniden adlandırmasından ÖNCEki, yani
+`NEXT_PUBLIC_SITE_URL` kullanan sürüm) canlı kalıyor — site çalışır durumda,
+acil değil ama #5 tam bitmiş sayılmaz.
+
+Sıradaki: #6 (güvenlik sertleştirme — "Prod'a çıkmadan önce zorunlu"
+bölümü) veya kullanıcı yeni eklenen marka/tasarım taleplerini (#18-20)
+önceliklendirmek isterse onlar.
 
 ### 1. Profil / Hesap Ayarları sayfası — ✅ tamamlandı (2026-08-24)
 - Yeni rota: `/profil` — ad soyad, e-posta (salt okunur), dil/locale güncelleme
@@ -155,22 +171,36 @@ olarak güvenilmeyen cihazlarda; "güvenilir cihaz" süresi **30 gün**.
   cihazdan çık" o cihazın `trusted_devices` kaydını, "tüm cihazlardan çık"
   kullanıcının tüm kayıtlarını siliyor — güvenlik amacıyla tutarlı.
 - `TEST_OTP_EMAIL`/`TEST_OTP_CODE` kodundan tamamen kaldırıldı (giriş
-  action'ı, `admin.ts` yorumu, `env.example`). **Elle yapılacak**: bu iki
-  değişken zaten Vercel prod ortam değişkenlerinde tanımlıysa oradan da
-  silinmeli (Claude'un Vercel erişimi yok).
-- **Elle yapılacak (Supabase Dashboard → Authentication → Email
-  Templates)**: "Magic Link" şablonu kontrol edildi, `{{ .Token }}` zaten
-  var (önceki oturumdan kalma önkoşul, ekstra iş yok). "Reset Password"
+  action'ı, `admin.ts` yorumu, `env.example`). Vercel prod ortam
+  değişkenlerinde bu ikisi kontrol edildi, zaten hiç tanımlanmamışlar —
+  yapılacak bir şey yok.
+- `NEXT_PUBLIC_SITE_URL` → `SITE_URL` olarak yeniden adlandırıldı (şifre
+  sıfırlama linki için kullanılan site adresi) — yalnızca
+  `sifre-sifirla/actions.ts` sunucu action'ında okunuyor, tarayıcıya hiç
+  gitmiyor, bu yüzden `NEXT_PUBLIC_` öneki gereksizdi (Vercel'in "public
+  prefix tarayıcıya sızar" uyarısı doğruydu). Vercel'e `SITE_URL=
+  https://aile-finans-mu.vercel.app` **Config** (Secret değil — gizli bir
+  değer değil) tipinde, Production+Preview kapsamıyla Claude tarafından
+  Chrome üzerinden bizzat eklendi.
+- **Vercel deploy hatası ve düzeltmesi (2026-08-28)**: SITE_URL eklendikten
+  sonra tetiklenen redeploy `Command "npm run build" exited with 1` ile
+  başarısız oldu — `web/src/app/giris/actions.ts` içinde
+  `verifyLoginOtpAction`, sondaki `await afterLoginRedirect(supabase)`
+  çağrısından sonra dönüş değeri olmadığı için TS2366 hatası verdi
+  (`afterLoginRedirect` her zaman `redirect()` ile fırlatıyor ama TypeScript
+  bunu `Promise<never>` zinciri üzerinden "ulaşılamaz" olarak tanımadı).
+  Düzeltme: fonksiyonun sonuna tip kontrolünü memnun eden, çalışma anında
+  hiç ulaşılmayan bir `return` satırı eklendi. **Bu düzeltme cihaza yazıldı
+  ama henüz push edilmedi** — aşağıdaki git komutlarını çalıştırıp push
+  etmeden bu iş tam bitmiş sayılmaz (bkz. yukarıdaki "Şimdi" uyarısı).
+- **Hâlâ elle yapılması gereken (kullanıcı tarafında, Claude tamamlayamadı)**:
+  Supabase Dashboard → Authentication → Email Templates → "Reset Password"
   şablonundaki bağlantının
   `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=recovery`
-  olarak değiştirilmesi gerekiyor (kullanıcı bunu kendisi yapacak, tab açık
-  bırakıldı). Vercel'de `TEST_OTP_EMAIL`/`TEST_OTP_CODE` zaten hiç
-  tanımlanmamış (kontrol edildi). Vercel'e `SITE_URL=https://aile-finans-mu.vercel.app`
-  env değişkeni eklenmeli — **bilinçli olarak `NEXT_PUBLIC_` öneki YOK**
-  (Vercel'in "public prefix tarayıcıya sızar" uyarısı doğruydu: bu değer
-  yalnızca `sifre-sifirla/actions.ts` sunucu action'ında okunuyor, hiçbir
-  client component'e gitmiyor — bkz. `web/env.example`,
-  `web/src/lib/site-url.ts`).
+  olarak değiştirilmesi ("Magic Link" şablonu zaten `{{ .Token }}` içeriyor,
+  ekstra iş yok). `.env.local`'de `NEXT_PUBLIC_SITE_URL` → `SITE_URL`
+  yeniden adlandırması için kullanıcıya PowerShell komutu verildi, çalıştırıp
+  çalıştırmadığı bu sohbette teyit edilmedi.
 - E-posta değiştirme akışı bilinçli olarak kapsam dışı bırakıldı — profil
   sayfasında e-posta hâlâ salt okunur (#1). Ayrı bir iş olarak ele
   alınabilir.
