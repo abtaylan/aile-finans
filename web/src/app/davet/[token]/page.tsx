@@ -68,11 +68,18 @@ export default async function DavetPage({
               </p>
 
               {!user && (
-                <Button asChild>
-                  <Link href={`/giris?email=${encodeURIComponent(invite.email)}`}>
-                    Giriş yap ve katıl
-                  </Link>
-                </Button>
+                <div className="flex flex-col gap-2">
+                  <Button asChild>
+                    <Link href={`/kayit?email=${encodeURIComponent(invite.email)}`}>
+                      Hesap oluştur ve katıl
+                    </Link>
+                  </Button>
+                  <Button asChild variant="outline">
+                    <Link href={`/giris?email=${encodeURIComponent(invite.email)}`}>
+                      Zaten hesabım var, giriş yap
+                    </Link>
+                  </Button>
+                </div>
               )}
 
               {user && hasProfile && (

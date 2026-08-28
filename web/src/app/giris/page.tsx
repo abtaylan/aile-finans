@@ -1,48 +1,63 @@
 "use client";
 
 import { Suspense, useActionState, useState } from "react";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { sendOtpAction, verifyOtpAction, type OtpState } from "./actions";
+import { signInAction, verifyLoginOtpAction, type LoginState } from "./actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-const baseState: OtpState = { step: "email", email: "", error: null, info: null };
+const baseState: LoginState = { step: "password", email: "", error: null, info: null };
 
 function GirisPageInner() {
   const searchParams = useSearchParams();
   const prefillEmail = searchParams.get("email") ?? "";
-  const initialState: OtpState = { ...baseState, email: prefillEmail };
+  // /kayit'tan gelen yeni hesaplar OTP kodu zaten gönderilmiş halde
+  // buraya (step=otp) yönlendirilir — kullanıcı tekrar "kod gönder"
+  // tıklamak zorunda kalmaz.
+  const startAtOtp = searchParams.get("step") === "otp" && prefillEmail !== "";
+  const initialInfo = startAtOtp
+    ? "Hesabını doğrulamak için e-postana gönderdiğimiz 6 haneli kodu gir."
+    : null;
+  const initialState: LoginState = {
+    ...baseState,
+    email: prefillEmail,
+    info: initialInfo,
+  };
 
-  const [emailState, sendAction, sendPending] = useActionState(sendOtpAction, initialState);
-  const [codeState, verifyAction, verifyPending] = useActionState(verifyOtpAction, initialState);
-  const [step, setStep] = useState<"email" | "code">("email");
+  const [passwordState, passwordAction, passwordPending] = useActionState(
+    signInAction,
+    initialState
+  );
+  const [otpState, otpAction, otpPending] = useActionState(verifyLoginOtpAction, initialState);
+  const [step, setStep] = useState<"password" | "otp">(startAtOtp ? "otp" : "password");
   const [email, setEmail] = useState(prefillEmail);
 
   // Sunucu action'ları her tamamlandığında (render sırasında, effect içinde DEĞİL —
   // bkz. React "adjusting state when a prop changes" deseni) yerel adım/e-posta
   // state'ini senkronize ediyoruz. Önceki referansla kıyaslamak sonsuz render'ı önler.
-  const [prevEmailState, setPrevEmailState] = useState(emailState);
-  if (emailState !== prevEmailState) {
-    setPrevEmailState(emailState);
-    if (emailState.step === "code" && emailState.email) {
-      setStep("code");
-      setEmail(emailState.email);
+  const [prevPasswordState, setPrevPasswordState] = useState(passwordState);
+  if (passwordState !== prevPasswordState) {
+    setPrevPasswordState(passwordState);
+    if (passwordState.step === "otp" && passwordState.email) {
+      setStep("otp");
+      setEmail(passwordState.email);
     }
   }
 
-  const [prevCodeState, setPrevCodeState] = useState(codeState);
-  if (codeState !== prevCodeState) {
-    setPrevCodeState(codeState);
-    if (codeState.error) {
-      setStep("code");
-      if (codeState.email) setEmail(codeState.email);
+  const [prevOtpState, setPrevOtpState] = useState(otpState);
+  if (otpState !== prevOtpState) {
+    setPrevOtpState(otpState);
+    if (otpState.error) {
+      setStep("otp");
+      if (otpState.email) setEmail(otpState.email);
     }
   }
 
-  const error = step === "code" ? codeState.error : emailState.error;
-  const info = emailState.info || codeState.info;
+  const error = step === "otp" ? otpState.error : passwordState.error;
+  const info = passwordState.info || otpState.info || (step === "otp" ? initialInfo : null);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-[var(--page)] px-4">
@@ -52,14 +67,14 @@ function GirisPageInner() {
             Aile Finans’a Giriş Yap
           </CardTitle>
           <p className="text-sm text-[var(--text-secondary)]">
-            {step === "email"
-              ? "E-postana gönderilecek kod ile giriş yap veya hesap oluştur."
+            {step === "password"
+              ? "E-posta ve şifrenle giriş yap."
               : `${email} adresine gönderilen 6 haneli kodu gir.`}
           </p>
         </CardHeader>
         <CardContent>
-          {step === "email" ? (
-            <form action={sendAction} className="flex flex-col gap-4">
+          {step === "password" ? (
+            <form action={passwordAction} className="flex flex-col gap-4">
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="email">E-posta</Label>
                 <Input
@@ -71,13 +86,29 @@ function GirisPageInner() {
                   autoComplete="email"
                 />
               </div>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="password">Şifre</Label>
+                <Input
+                  id="password"
+                  name="password"
+                  type="password"
+                  required
+                  autoComplete="current-password"
+                />
+              </div>
               {error && <p className="text-sm text-[var(--critical)]">{error}</p>}
-              <Button type="submit" disabled={sendPending} className="mt-2 w-full">
-                {sendPending ? "Kod gönderiliyor…" : "Kod Gönder"}
+              <Button type="submit" disabled={passwordPending} className="mt-2 w-full">
+                {passwordPending ? "Giriş yapılıyor…" : "Giriş Yap"}
               </Button>
+              <Link
+                href="/sifre-sifirla"
+                className="text-center text-sm text-[var(--text-secondary)] hover:underline"
+              >
+                Şifremi unuttum
+              </Link>
             </form>
           ) : (
-            <form action={verifyAction} className="flex flex-col gap-4">
+            <form action={otpAction} className="flex flex-col gap-4">
               <input type="hidden" name="email" value={email} />
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="code">Doğrulama Kodu</Label>
@@ -96,17 +127,25 @@ function GirisPageInner() {
               </div>
               {info && <p className="text-sm text-[var(--text-secondary)]">{info}</p>}
               {error && <p className="text-sm text-[var(--critical)]">{error}</p>}
-              <Button type="submit" disabled={verifyPending} className="mt-2 w-full">
-                {verifyPending ? "Doğrulanıyor…" : "Doğrula ve Giriş Yap"}
+              <Button type="submit" disabled={otpPending} className="mt-2 w-full">
+                {otpPending ? "Doğrulanıyor…" : "Doğrula ve Giriş Yap"}
               </Button>
               <button
                 type="button"
-                onClick={() => setStep("email")}
+                onClick={() => setStep("password")}
                 className="text-center text-sm text-[var(--text-secondary)] hover:underline"
               >
                 Farklı bir e-posta kullan
               </button>
             </form>
+          )}
+          {step === "password" && (
+            <p className="mt-4 text-center text-sm text-[var(--text-secondary)]">
+              Hesabın yok mu?{" "}
+              <Link href="/kayit" className="text-[var(--brand)] hover:underline">
+                Kayıt ol
+              </Link>
+            </p>
           )}
         </CardContent>
       </Card>

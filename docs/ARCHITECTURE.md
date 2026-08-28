@@ -8,7 +8,8 @@ belgeler (FastAPI/Celery/Redis kısmı henüz uygulanmadı, bkz. notlar):
 
 - **Veritabanı**: Supabase (proje: `aile-finans`, bölge `eu-central-1`).
   `database/schema_v2_supabase.sql` + `database/schema_v2_rls.sql` uygulandı
-  — 24 tablo, tamamı Row Level Security ile aile bazlı izole. Kimlik
+  — 27 tablo (2026-08-28 itibarıyla), tamamı Row Level Security ile aile
+  bazlı izole. Kimlik
   doğrulama tamamen **Supabase Auth**'a devredildi; `public.users` artık
   `auth.users`'a 1-1 bağlı bir profil tablosu (ayrı `password_hash` yok).
 - **Web**: Next.js 16 (App Router, Turbopack) + Tailwind v4 + elle
@@ -37,30 +38,51 @@ belgeler (FastAPI/Celery/Redis kısmı henüz uygulanmadı, bkz. notlar):
 - **Fiyat verisi**: TCMB/TEFAS otomatik besleme henüz yok; Portföy
   sayfasında "Fiyat Güncelle" ile manuel fiyat girilip
   `asset_price_history` tablosuna `source='manual'` olarak yazılıyor.
-- **Kimlik doğrulama**: Şifre yerine **e-posta OTP** (6 haneli kod,
-  passwordless) kullanılıyor — `web/src/app/giris/`. Akış: e-posta gir →
-  `supabase.auth.signInWithOtp` (yeni kullanıcıyı otomatik oluşturur,
-  `shouldCreateUser: true`) → kullanıcıya e-postayla gelen 6 haneli kodu
-  gir → `supabase.auth.verifyOtp({ email, token, type: 'email' })`.
-  Profili olmayan kullanıcı `/onboarding`'e yönlendirilir. `/kayit`
-  kaldırıldı (kayıt ve giriş artık aynı ekran).
-  - **Test hesabı kısayolu**: `TEST_OTP_EMAIL` (varsayılan
-    `test@ailefinans.app`) ile bu adres girildiğinde gerçek e-posta
-    gönderilmez; doğrudan kod adımına geçilir. `TEST_OTP_CODE`
-    (varsayılan `123456`) girildiğinde, sunucu tarafında
-    `SUPABASE_SERVICE_ROLE_KEY` ile oluşturulan admin istemcisi
-    (`web/src/lib/supabase/admin.ts`) `auth.admin.generateLink({type:
-    'magiclink'})` çağırıp dönen `hashed_token`'ı `verifyOtp` ile
-    doğrulayarak gerçek bir Supabase oturumu kurar — yani kısayol yalnızca
-    e-posta gönderimini atlar, oturumun kendisi sahte değildir. Bu, tek
-    e-posta/tek kullanıcı modeline geçilene kadar geçici bir test
-    kolaylığıdır; üretimde kaldırılmalı veya `TEST_OTP_EMAIL` boş
-    bırakılarak devre dışı kalmalıdır.
-  - **Önkoşul**: Supabase'in "Magic Link" e-posta şablonu varsayılan
-    olarak yalnızca tıklanabilir bir bağlantı (`{{ .ConfirmationURL }}`)
-    içerir, 6 haneli kod içermez. Gerçek kullanıcıların koda sahip
-    olabilmesi için şablona `{{ .Token }}` eklenmesi gerekiyor (Supabase
-    Dashboard → Authentication → Email Templates → Magic Link).
+- **Kimlik doğrulama**: **Şifre + e-posta OTP ikinci faktör** (2026-08-28
+  itibarıyla kalıcı hale getirildi, bkz. ROADMAP.md #5 — önceki
+  passwordless-OTP-only ve test hesabı kısayolu tamamen kaldırıldı).
+  - **Kayıt** (`web/src/app/kayit/`): ad soyad + e-posta + şifre (min. 8
+    karakter) → `supabase.auth.signUp`.
+  - **Giriş** (`web/src/app/giris/`), iki adım:
+    1. E-posta + şifre → `supabase.auth.signInWithPassword`.
+    2. Bu cihaz daha önce doğrulanıp `trusted_devices`'a kaydedilmemişse
+       (bkz. aşağıdaki tablo), az önce kurulan oturum hemen kapatılır ve
+       `supabase.auth.signInWithOtp` ile e-postaya 6 haneli kod
+       gönderilir; kod `supabase.auth.verifyOtp({ email, token, type:
+       'email' })` ile doğrulanınca gerçek oturum kurulur. Cihaz
+       güvenilirse (30 gün, sliding window) bu adım atlanır.
+    - Ortak mantık `web/src/lib/auth/two-factor.ts`'de: cihaz güveni bir
+      httpOnly cookie (`af_device`, yalnızca rastgele token'ın SHA-256
+      hash'i DB'ye yazılır) + `public.trusted_devices` tablosuyla (RLS:
+      `user_id = auth.uid()`) tutuluyor.
+    - Yeni hesabın ilk oturumu da (kayıt sonrası, e-posta doğrulaması
+      Supabase tarafında kapalı olduğu için otomatik açılan oturum) aynı
+      "yeni cihaz" akışından geçiriliyor — böylece e-posta sahipliği
+      kayıt anında da kanıtlanmış oluyor.
+    - Profili olmayan kullanıcı `/onboarding`'e yönlendirilir.
+  - **Şifremi unuttum** (`web/src/app/sifre-sifirla/`):
+    `resetPasswordForEmail` → `web/src/app/auth/confirm/route.ts`
+    (`token_hash`+`type=recovery`'yi `verifyOtp` ile oturuma çevirir,
+    Supabase'in resmi SSR route-handler örüntüsü) → `/sifre-sifirla/yeni`
+    formu `updateUser({ password })` çağırır ve bu cihazı da güvenilir
+    işaretler (e-posta linkine erişim, OTP ile eşdeğer bir kanıt).
+  - **Oturum kapatma** (`web/src/app/(app)/profil/actions.ts`,
+    `signOutAction`): "bu cihazdan çık" yalnızca bu cihazın
+    `trusted_devices` kaydını siler; "tüm cihazlardan çık" o kullanıcının
+    tüm kayıtlarını siler — her cihaz yeniden OTP görür.
+  - **Önkoşul (elle, Supabase Dashboard → Authentication → Email
+    Templates)**:
+    - "Magic Link" şablonu varsayılan olarak yalnızca tıklanabilir bir
+      bağlantı içerir, 6 haneli kod içermez — giriş/kayıt OTP adımının
+      çalışması için şablona `{{ .Token }}` eklenmesi gerekiyor.
+    - "Reset Password" şablonundaki bağlantı
+      `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=recovery`
+      olmalı (varsayılan `{{ .ConfirmationURL }}` bizim route handler'ımızı
+      atlar).
+  - **Vercel'de elle yapılacak**: prod ortam değişkenlerinden
+    `TEST_OTP_EMAIL`/`TEST_OTP_CODE` kaldırılmalı (artık kullanılmıyor),
+    `NEXT_PUBLIC_SITE_URL=https://aile-finans-mu.vercel.app` eklenmeli
+    (şifre sıfırlama linkleri için — bkz. `web/env.example`).
 
 
 ## 1. Genel Bakış

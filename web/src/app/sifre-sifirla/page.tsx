@@ -3,70 +3,50 @@
 import { Suspense, useActionState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { signUpAction } from "./actions";
+import { requestPasswordResetAction, type ForgotPasswordState } from "./actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-function KayitPageInner() {
-  const searchParams = useSearchParams();
-  const prefillEmail = searchParams.get("email") ?? "";
+const initialState: ForgotPasswordState = { error: null, info: null };
 
-  const [state, formAction, pending] = useActionState(signUpAction, {
-    error: null,
-    info: null,
-  });
+function SifreSifirlaInner() {
+  const searchParams = useSearchParams();
+  const linkExpired = searchParams.get("error") === "link_suresi_dolmus";
+  const [state, formAction, pending] = useActionState(requestPasswordResetAction, initialState);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-[var(--page)] px-4">
       <Card className="w-full max-w-sm">
         <CardHeader>
           <CardTitle className="text-xl font-semibold text-[var(--text-primary)]">
-            Aile Finans’a Kayıt Ol
+            Şifreni mi unuttun?
           </CardTitle>
           <p className="text-sm text-[var(--text-secondary)]">
-            Ailenin finans panosunu oluşturmak için bir hesap aç.
+            E-posta adresini gir, sana bir şifre sıfırlama bağlantısı gönderelim.
           </p>
         </CardHeader>
         <CardContent>
+          {linkExpired && !state.info && (
+            <p className="mb-4 text-sm text-[var(--critical)]">
+              Bağlantının süresi dolmuş veya geçersiz. Tekrar dene.
+            </p>
+          )}
           <form action={formAction} className="flex flex-col gap-4">
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="fullName">Ad Soyad</Label>
-              <Input id="fullName" name="fullName" type="text" required autoComplete="name" />
-            </div>
-            <div className="flex flex-col gap-1.5">
               <Label htmlFor="email">E-posta</Label>
-              <Input
-                id="email"
-                name="email"
-                type="email"
-                defaultValue={prefillEmail}
-                required
-                autoComplete="email"
-              />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="password">Şifre</Label>
-              <Input
-                id="password"
-                name="password"
-                type="password"
-                required
-                minLength={8}
-                autoComplete="new-password"
-              />
+              <Input id="email" name="email" type="email" required autoComplete="email" />
             </div>
             {state.error && <p className="text-sm text-[var(--critical)]">{state.error}</p>}
             {state.info && <p className="text-sm text-[var(--good)]">{state.info}</p>}
             <Button type="submit" disabled={pending} className="mt-2 w-full">
-              {pending ? "Kayıt oluşturuluyor…" : "Kayıt Ol"}
+              {pending ? "Gönderiliyor…" : "Sıfırlama Bağlantısı Gönder"}
             </Button>
           </form>
           <p className="mt-4 text-center text-sm text-[var(--text-secondary)]">
-            Zaten hesabın var mı?{" "}
             <Link href="/giris" className="text-[var(--brand)] hover:underline">
-              Giriş yap
+              Girişe dön
             </Link>
           </p>
         </CardContent>
@@ -75,10 +55,10 @@ function KayitPageInner() {
   );
 }
 
-export default function KayitPage() {
+export default function SifreSifirlaPage() {
   return (
     <Suspense fallback={null}>
-      <KayitPageInner />
+      <SifreSifirlaInner />
     </Suspense>
   );
 }

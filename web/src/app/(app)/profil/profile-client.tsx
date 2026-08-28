@@ -15,8 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { createClient } from "@/lib/supabase/client";
-import { updateProfileAction, updateFamilyAction } from "./actions";
+import { updateProfileAction, updateFamilyAction, signOutAction } from "./actions";
 import type { Family, UserProfile } from "@/lib/types/database";
 
 const LOCALE_LABELS: Record<string, string> = {
@@ -46,10 +45,10 @@ export function ProfileClient({
 
   async function handleSignOut(scope: "local" | "global") {
     setSigningOut(scope);
-    const supabase = createClient();
-    await supabase.auth.signOut({ scope });
-    router.push("/giris");
-    router.refresh();
+    // signOutAction hem Supabase oturumunu hem de (scope'a göre bu
+    // cihazın veya tüm cihazların) güvenilir-cihaz kaydını temizleyip
+    // /giris'e yönlendirir (bkz. src/app/(app)/profil/actions.ts).
+    await signOutAction(scope);
   }
 
   async function handleUpdateProfile(formData: FormData) {

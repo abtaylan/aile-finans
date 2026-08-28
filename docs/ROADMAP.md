@@ -15,7 +15,9 @@ yazmaya gerek yok:
 - Repo yolu: `C:\Users\ytt\OneDrive\Masaüstü\PROJELER\Aile Finans Yönetimi\aile-finans`
   (klasör bağlantısını yeni sohbette onaylaman gerekir — masaüstü uygulaması sorar)
 - Canlı: aile-finans-mu.vercel.app
-- Test hesabı: `test@ailefinans.app` / `123456`
+- ~~Test hesabı: `test@ailefinans.app` / `123456`~~ — #5 ile kaldırıldı,
+  artık geçerli değil. Giriş artık normal kayıt (`/kayit`) ile açılan
+  gerçek bir hesap gerektiriyor.
 - Supabase projesi (`aile-finans`, ref `ejcjwlubpwvppxmypvxq`) MCP üzerinden
   otomatik bulunuyor, ayrıca belirtmeye gerek yok.
 - **Git**: Claude'un cihazda shell erişimi yok — sadece dosya okuyup/yazabiliyor
@@ -30,8 +32,10 @@ yazmaya gerek yok:
 ## Şimdi (sıradaki)
 
 Test sırasında fark edilen somut boşluklar — günlük kullanımı engelleyen eksikler.
-"Şimdi" bölümündeki tüm işler tamamlandı. Sıradaki: #5 (OTP test kısayolunu
-kapat, kalıcı kimlik doğrulamaya geç — "Prod'a çıkmadan önce zorunlu" bölümü).
+"Şimdi" bölümündeki tüm işler tamamlandı, #5 de dahil. Sıradaki: #6
+(güvenlik sertleştirme — "Prod'a çıkmadan önce zorunlu" bölümü) veya
+kullanıcı yeni eklenen marka/tasarım taleplerini (#18-20) önceliklendirmek
+isterse onlar.
 
 ### 1. Profil / Hesap Ayarları sayfası — ✅ tamamlandı (2026-08-24)
 - Yeni rota: `/profil` — ad soyad, e-posta (salt okunur), dil/locale güncelleme
@@ -124,11 +128,47 @@ Koyu tema CSS'i zaten hazırdı, tetikleyecek arayüz eklendi.
 Test aşamasında olduğu gibi kalabilir (kullanıcının talimatıyla) — gerçek
 kullanıcılar öncesinde mutlaka bitmeli.
 
-### 5. OTP test kısayolunu kapat, kalıcı kimlik doğrulamaya geç
-`test@ailefinans.app` + `123456` admin-bypass'ı sadece test için.
-- Şifre + OTP veya güçlü e-posta OTP + "güvenilir cihaz" — test sonunda karar
-- `TEST_OTP_EMAIL`/`TEST_OTP_CODE` env değişkenlerini prod'dan kaldır
-- Şifre unuttum / e-posta değiştirme akışları (şifre eklenirse)
+### 5. OTP test kısayolunu kapat, kalıcı kimlik doğrulamaya geç — ✅ tamamlandı (2026-08-28)
+Karar (kullanıcıyla netleştirildi): **e-posta + şifre, OTP ikinci faktör**
+olarak güvenilmeyen cihazlarda; "güvenilir cihaz" süresi **30 gün**.
+- **Giriş** (`/giris`) artık iki adım: (1) e-posta + şifre
+  (`signInWithPassword`), (2) cihaz güvenilir değilse e-posta OTP kodu.
+  Cihaz güveni `public.trusted_devices` tablosunda (yeni migration:
+  `trusted_devices_for_otp_2fa`) tutuluyor — httpOnly cookie'deki rastgele
+  token'ın yalnızca SHA-256 hash'i DB'ye yazılıyor, RLS `user_id =
+  auth.uid()` ile kilitli. 30 gün "sliding window": her başarılı
+  kullanımda süre yeniden uzuyor. Ortak mantık: `src/lib/auth/two-factor.ts`.
+- **Kayıt** (`/kayit`) geri getirildi (öncesinde yalnızca OTP vardı, şifreli
+  kayıt akışı kodda duruyordu ama hiçbir yerden linklenmiyordu). Yeni
+  hesabın kayıt sonrası ilk oturumu da aynı "yeni cihaz" akışından
+  geçiyor — yani e-posta sahipliği kayıt anında OTP ile kanıtlanmış oluyor
+  (Supabase'te e-posta doğrulaması kapalı olduğu için bu, o boşluğu da
+  kapatıyor).
+- **Aile daveti** (`/davet/[token]`) artık hem "Hesap oluştur ve katıl"
+  (`/kayit`) hem "Zaten hesabım var, giriş yap" (`/giris`) seçeneklerini
+  gösteriyor — öncesinde tek buton OTP-only girişe gidiyordu.
+- **Şifremi unuttum** (`/sifre-sifirla` → e-posta linki → `/auth/confirm`
+  route handler, Supabase'in resmi SSR örüntüsü → `/sifre-sifirla/yeni`)
+  eklendi. Linke e-postadan erişim de OTP ile eşdeğer kanıt sayılıp cihaz
+  güvenilir işaretleniyor.
+- **Oturum kapatma** (`/profil`) artık sunucu action'ı üzerinden: "bu
+  cihazdan çık" o cihazın `trusted_devices` kaydını, "tüm cihazlardan çık"
+  kullanıcının tüm kayıtlarını siliyor — güvenlik amacıyla tutarlı.
+- `TEST_OTP_EMAIL`/`TEST_OTP_CODE` kodundan tamamen kaldırıldı (giriş
+  action'ı, `admin.ts` yorumu, `env.example`). **Elle yapılacak**: bu iki
+  değişken zaten Vercel prod ortam değişkenlerinde tanımlıysa oradan da
+  silinmeli (Claude'un Vercel erişimi yok).
+- **Elle yapılacak (Supabase Dashboard → Authentication → Email
+  Templates)**: "Magic Link" şablonuna `{{ .Token }}` eklenmesi (giriş/kayıt
+  OTP adımı için, önceki oturumdan kalma bir önkoşuldu) + "Reset Password"
+  şablonundaki bağlantının
+  `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=recovery`
+  olarak değiştirilmesi (yeni). Ayrıca Vercel'e
+  `NEXT_PUBLIC_SITE_URL=https://aile-finans-mu.vercel.app` env değişkeni
+  eklenmeli (şifre sıfırlama linki bunu kullanıyor, bkz. `web/env.example`).
+- E-posta değiştirme akışı bilinçli olarak kapsam dışı bırakıldı — profil
+  sayfasında e-posta hâlâ salt okunur (#1). Ayrı bir iş olarak ele
+  alınabilir.
 
 ### 6. Güvenlik sertleştirme (Supabase advisor uyarıları)
 - `citext` uzantısını public şemadan ayrı şemaya taşı
@@ -231,6 +271,36 @@ motoruyla doldurup kullanıcıya onay ekranı sunmak.
 - Onay ekranı: kullanıcı satır satır onaylar/düzenler/reddeder —
   onaylananlar manuel akıştaki `addStatementItemAction` ile aynı şekilde
   gerçek `transactions` kaydına dönüşür
+
+---
+
+## Yeni talepler (2026-08-28, kullanıcıdan — henüz kapsam/öncelik netleşmedi)
+
+Kullanıcının verdiği ham liste; her biri kapsam netleşmeden çalışılabilir
+değil, o yüzden şimdilik yalnızca kaydedildi.
+
+### 18. Aile Finans kurumsal web sitesi
+Uygulamanın kendisinden (aile-finans-mu.vercel.app) ayrı, tanıtım amaçlı bir
+kurumsal/pazarlama sitesi. Netleşmesi gerekenler: ayrı bir domain/subdomain
+mi yoksa mevcut Vercel projesinin açılış sayfası mı; kaç sayfa ve hangi
+içerik (özellikler, fiyatlandırma, iletişim, hakkımızda); marka kimliği
+henüz yok (bkz. #20, logo) — muhtemelen ondan önce ele alınmamalı.
+
+### 19. Bütçe sayfasındaki ikon değişecek
+Hangi ikon(lar) neyle değiştirilecek netleşmedi — `/butce` sayfasında şu an
+`lucide-react` ikonları kullanılıyor (`src/app/(app)/butce/`). Kullanıcıdan
+hangi ikon(ler) ve tercih edilen görsel yön (ör. belirli bir Lucide ikonu,
+özel bir SVG/set) netleştirilmeli.
+
+### 20. Logo yaptırılacak
+Aile Finans için marka logosu. Netleşmesi gerekenler: stil tercihi (metin
+bazlı/simge/ikisi), renk paleti (mevcut `--brand` CSS değişkeniyle uyumlu mu
+yoksa markayla birlikte yeniden mi belirlenecek), kullanım alanları (favicon,
+üst bar, kurumsal site — #18 ile bağlantılı).
+
+> Not: kullanıcının listesindeki "login sayfasında şifremi unuttum alanı"
+> maddesi ayrı bir iş olarak eklenmedi — #5 kapsamında bu oturumda zaten
+> teslim edildi (`/sifre-sifirla`, bkz. yukarısı).
 
 ---
 

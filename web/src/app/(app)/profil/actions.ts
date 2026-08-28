@@ -1,7 +1,10 @@
 "use server";
 
+import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { requireFamilyContext } from "@/lib/auth-context";
+import { createClient } from "@/lib/supabase/server";
+import { clearDeviceCookie, getDeviceTokenHash } from "@/lib/auth/two-factor";
 
 const LOCALES = ["tr-TR", "en-US"];
 
@@ -50,4 +53,38 @@ export async function updateFamilyAction(formData: FormData) {
   if (error) throw new Error(error.message);
 
   revalidatePath("/profil");
+}
+
+/**
+ * "Bu cihazdan çıkış": yalnızca bu tarayıcının oturumunu ve bu cihazın
+ * güvenilir-cihaz kaydını kaldırır — sonraki girişte bu cihaz yine OTP
+ * ister.
+ * "Tüm cihazlardan çıkış": tüm Supabase oturumlarını VE bu hesaba ait
+ * tüm güvenilir-cihaz kayıtlarını siler — her cihaz bir sonraki girişte
+ * yeniden OTP ile doğrulanmak zorunda kalır (bkz. ROADMAP.md #5).
+ */
+export async function signOutAction(scope: "local" | "global") {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (user) {
+    if (scope === "global") {
+      await supabase.from("trusted_devices").delete().eq("user_id", user.id);
+    } else {
+      const tokenHash = await getDeviceTokenHash();
+      if (tokenHash) {
+        await supabase
+          .from("trusted_devices")
+          .delete()
+          .eq("user_id", user.id)
+          .eq("token_hash", tokenHash);
+      }
+    }
+  }
+
+  await clearDeviceCookie();
+  await supabase.auth.signOut({ scope });
+  redirect("/giris");
 }

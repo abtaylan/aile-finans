@@ -29,20 +29,35 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const isAuthRoute =
-    request.nextUrl.pathname.startsWith("/giris") ||
-    request.nextUrl.pathname.startsWith("/kayit");
-  const isPublicAsset =
-    request.nextUrl.pathname.startsWith("/_next") ||
-    request.nextUrl.pathname.startsWith("/favicon");
+  const pathname = request.nextUrl.pathname;
 
-  if (!user && !isAuthRoute && !isPublicAsset) {
+  // Oturum gerektirmeyen rotalar: giriş/kayıt, şifre sıfırlama (istek +
+  // e-posta bağlantısının indiği /auth/confirm). /sifre-sifirla/yeni bu
+  // gruba GİRMİYOR — oraya yalnızca /auth/confirm'ün kurduğu geçici
+  // "recovery" oturumuyla erişilir, dolayısıyla zaten `user` dolu olur.
+  const isPublicRoute =
+    pathname.startsWith("/giris") ||
+    pathname.startsWith("/kayit") ||
+    pathname.startsWith("/sifre-sifirla") ||
+    pathname.startsWith("/auth/confirm");
+  const isPublicAsset =
+    pathname.startsWith("/_next") || pathname.startsWith("/favicon");
+
+  if (!user && !isPublicRoute && !isPublicAsset) {
     const url = request.nextUrl.clone();
     url.pathname = "/giris";
     return NextResponse.redirect(url);
   }
 
-  if (user && isAuthRoute) {
+  // Zaten giriş yapmış bir kullanıcı giriş/kayıt/"şifremi unuttum" istek
+  // sayfasına dönmemeli — ama /sifre-sifirla/yeni bunun dışında, çünkü
+  // oraya tam olarak giriş yapılmış (recovery oturumlu) haldeyken gelinir.
+  const isRedirectIfAuthedRoute =
+    pathname.startsWith("/giris") ||
+    pathname.startsWith("/kayit") ||
+    pathname === "/sifre-sifirla";
+
+  if (user && isRedirectIfAuthedRoute) {
     const url = request.nextUrl.clone();
     url.pathname = "/";
     return NextResponse.redirect(url);
