@@ -79,10 +79,12 @@ belgeler (FastAPI/Celery/Redis kısmı henüz uygulanmadı, bkz. notlar):
       `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=recovery`
       olmalı (varsayılan `{{ .ConfirmationURL }}` bizim route handler'ımızı
       atlar).
-  - **Vercel'de elle yapılacak**: prod ortam değişkenlerinden
-    `TEST_OTP_EMAIL`/`TEST_OTP_CODE` kaldırılmalı (artık kullanılmıyor),
-    `NEXT_PUBLIC_SITE_URL=https://aile-finans-mu.vercel.app` eklenmeli
-    (şifre sıfırlama linkleri için — bkz. `web/env.example`).
+  - **Vercel'de elle yapılacak**: prod ortam değişkenlerinde
+    `TEST_OTP_EMAIL`/`TEST_OTP_CODE` zaten hiç tanımlanmamış (kontrol
+    edildi), yapılacak bir şey yok. `SITE_URL=https://aile-finans-mu.vercel.app`
+    eklenmeli (şifre sıfırlama linkleri için, bilinçli olarak `NEXT_PUBLIC_`
+    öneki YOK — yalnızca sunucu tarafında okunuyor, bkz. `web/env.example`,
+    `web/src/lib/site-url.ts`).
 
 
 ## 1. Genel Bakış

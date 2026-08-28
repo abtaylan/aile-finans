@@ -159,13 +159,18 @@ olarak güvenilmeyen cihazlarda; "güvenilir cihaz" süresi **30 gün**.
   değişken zaten Vercel prod ortam değişkenlerinde tanımlıysa oradan da
   silinmeli (Claude'un Vercel erişimi yok).
 - **Elle yapılacak (Supabase Dashboard → Authentication → Email
-  Templates)**: "Magic Link" şablonuna `{{ .Token }}` eklenmesi (giriş/kayıt
-  OTP adımı için, önceki oturumdan kalma bir önkoşuldu) + "Reset Password"
+  Templates)**: "Magic Link" şablonu kontrol edildi, `{{ .Token }}` zaten
+  var (önceki oturumdan kalma önkoşul, ekstra iş yok). "Reset Password"
   şablonundaki bağlantının
   `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=recovery`
-  olarak değiştirilmesi (yeni). Ayrıca Vercel'e
-  `NEXT_PUBLIC_SITE_URL=https://aile-finans-mu.vercel.app` env değişkeni
-  eklenmeli (şifre sıfırlama linki bunu kullanıyor, bkz. `web/env.example`).
+  olarak değiştirilmesi gerekiyor (kullanıcı bunu kendisi yapacak, tab açık
+  bırakıldı). Vercel'de `TEST_OTP_EMAIL`/`TEST_OTP_CODE` zaten hiç
+  tanımlanmamış (kontrol edildi). Vercel'e `SITE_URL=https://aile-finans-mu.vercel.app`
+  env değişkeni eklenmeli — **bilinçli olarak `NEXT_PUBLIC_` öneki YOK**
+  (Vercel'in "public prefix tarayıcıya sızar" uyarısı doğruydu: bu değer
+  yalnızca `sifre-sifirla/actions.ts` sunucu action'ında okunuyor, hiçbir
+  client component'e gitmiyor — bkz. `web/env.example`,
+  `web/src/lib/site-url.ts`).
 - E-posta değiştirme akışı bilinçli olarak kapsam dışı bırakıldı — profil
   sayfasında e-posta hâlâ salt okunur (#1). Ayrı bir iş olarak ele
   alınabilir.
