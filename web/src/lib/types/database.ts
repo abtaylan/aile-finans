@@ -1,34 +1,31 @@
-// Supabase şema tiplerinin elle yazılmış (hafifletilmiş) TypeScript karşılığı.
-// İleride `supabase gen types typescript` ile otomatik üretilenle değiştirilebilir.
+// Supabase semasinin elle yazilmis (hafifletilmis) TypeScript karsiligi.
+// Ileride `supabase gen types typescript` ile otomatik uretilenle degistirilebilir.
 
 export type AccountType =
   | "checking"
-  | "savings"
-  | "credit_card"
-  | "cash"
-  | "investment"
-  | "loan";
+| "savings"
+| "credit_card"
+| "cash"
+| "investment"
+| "loan";
 
 export type TransactionType = "income" | "expense" | "transfer";
-export type AssetType = "gold" | "currency" | "tefas_fund" | "stock" | "crypto" | "other";
+export type AssetType = "gold" | "silver" | "currency" | "tefas_fund" | "stock" | "crypto" | "other";
 export type CostMethod = "fifo" | "weighted_average";
 export type AssetTxType = "buy" | "sell" | "transfer_in" | "transfer_out" | "adjustment";
 export type PropertyType = "ev" | "yazlik" | "kiralik" | "ticari" | "arsa" | "diger";
 export type LoanType =
   | "konut_kredisi"
-  | "tasit_kredisi"
-  | "ihtiyac_kredisi"
-  | "kredi_karti_borcu"
-  | "kisisel_borc"
-  | "diger";
+| "tasit_kredisi"
+| "ihtiyac_kredisi"
+| "kredi_karti_borcu"
+| "kisisel_borc"
+| "diger";
 export type NisabBasis = "gold" | "silver";
+export type DonationType = "bagis" | "sadaka" | "fitre" | "kurban" | "diger";
 
-// Aile içi rol hiyerarşisi. Yalnızca owner/admin yönetimsel işlem yapabilir
-// (üye davet/çıkarma, rol atama, kategori yönetimi, aile ayarları) — bkz.
-// database/schema_v2_rls.sql ve migration `family_role_management_and_invites`.
 export type MemberRole = "owner" | "admin" | "member" | "viewer";
 
-// Davet akışında owner rolü asla verilmez (bkz. chk_family_invites_role).
 export type InvitableRole = Exclude<MemberRole, "owner">;
 
 export interface Family {
@@ -36,6 +33,7 @@ export interface Family {
   name: string;
   base_currency: string;
   timezone: string;
+  zakat_hawl_start_date: string | null;
 }
 
 export interface UserProfile {
@@ -204,9 +202,32 @@ export interface Budget {
   currency: string;
 }
 
-// Kredi kartı ekstresi (roadmap #3). `source: "manual"` elle girilen
-// ekstreleri, `source: "upload"` ise ileride eklenecek PDF/CSV yükleme
-// akışını (adım 3, henüz yok) işaretler.
+export interface Donation {
+  id: string;
+  family_id: string;
+  donation_type: DonationType;
+  recipient: string;
+  description: string | null;
+  amount: number;
+  currency: string;
+  donation_date: string;
+  hijri_date_label: string | null;
+  counts_toward_zakat: boolean;
+  linked_account_id: string | null;
+}
+
+export interface ZakatPayment {
+  id: string;
+  family_id: string;
+  zakat_calculation_id: string | null;
+  donation_id: string | null;
+  payment_date: string;
+  amount: number;
+  currency: string;
+  recipient: string | null;
+  notes: string | null;
+}
+
 export type StatementUploadStatus = "pending" | "processing" | "completed" | "failed";
 export type StatementSource = "upload" | "manual";
 
@@ -229,9 +250,6 @@ export interface BankStatementUpload {
   error_message: string | null;
 }
 
-// Ekstre kalemi. Taksitli alışverişlerde `amount` o ay ekstreye yansıyan
-// tutardır (gerçek ekstredeki gibi) — `installment_label` yalnızca "3/6"
-// gibi bilgilendirme etiketidir, ileride otomatik ay bölme yapılmıyor.
 export interface BankStatementStagingTransaction {
   id: number;
   upload_id: string;
