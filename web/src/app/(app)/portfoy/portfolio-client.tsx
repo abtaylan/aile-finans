@@ -188,7 +188,7 @@ paddingAngle={2}
 <Cell key={index} fill={PIE_COLORS[index % PIE_COLORS.length]} />
 ))}
 </Pie>
-<Tooltip formatter={(value: number) => formatCurrency(value)} />
+<Tooltip formatter={(value) => formatCurrency(Number(value))} />
 <Legend />
 </PieChart>
 </ResponsiveContainer>
