@@ -156,8 +156,8 @@ paddingAngle={2}
 <Cell key={index} fill={PIE_COLORS[index % PIE_COLORS.length]} />
 ))}
 </Pie>
-<Tooltip formatter={(value: number) => formatCurrency(value)} />
-<Legend />
+<Tooltip formatter={(value) => formatCurrency(Number(value))} />
+  <Legend />
 </PieChart>
 </ResponsiveContainer>
 </div>
@@ -175,7 +175,7 @@ paddingAngle={2}
 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
 <XAxis dataKey="ay" stroke="var(--text-secondary)" fontSize={12} />
 <YAxis stroke="var(--text-secondary)" fontSize={12} />
-<Tooltip formatter={(value: number) => formatCurrency(value)} />
+<Tooltip formatter={(value) => formatCurrency(Number(value))} />
 <Legend />
 <Bar dataKey="Gelir" fill="#1baf7a" radius={[4, 4, 0, 0]} />
 <Bar dataKey="Gider" fill="#eb6834" radius={[4, 4, 0, 0]} />
