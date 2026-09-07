@@ -20,13 +20,24 @@ yazmaya gerek yok:
   gerçek bir hesap gerektiriyor.
 - Supabase projesi (`aile-finans`, ref `ejcjwlubpwvppxmypvxq`) MCP üzerinden
   otomatik bulunuyor, ayrıca belirtmeye gerek yok.
-- **Git**: Claude'un cihazda shell erişimi yok — sadece dosya okuyup/yazabiliyor
-  (device bridge ile) ve Supabase migration'ı MCP ile uygulayabiliyor. Kod
-  değişikliği yapılan HER oturumun sonunda, kullanıcı istemeden bile, çalıştırılacak
-  `git add / commit / push` komutları eksiksiz verilmeli (kopyala-yapıştır
-  hazır, repo yolunu içeren `cd` dahil) — bu adım daha önce birkaç kez
-  atlandı, bir daha atlanmasın. Push sonrası GitHub→Vercel entegrasyonu
-  otomatik deploy tetikliyor, ayrıca bir şey yapmaya gerek yok.
+- **Git**: Claude artık `device_bash` ile cihazda gerçek bir shell'e sahip
+  (2026-09-07 itibarıyla) — kod değişikliklerinden sonra `git add` (yalnızca
+  değişen dosyalar, asla `-A`) + `git commit` doğrudan yapılabiliyor. Tek
+  eksik: bu cihaz shell'inde GitHub için saklı kimlik bilgisi/credential
+  helper yok, bu yüzden `git push` başarısız oluyor (`could not read
+  Username for 'https://github.com'`) — commit yapıldıktan sonra kullanıcının
+  kendi terminalinden yalnızca `git push` çalıştırması gerekiyor (repo
+  yolunu içeren `cd` dahil, kopyala-yapıştır hazır komut verilmeli). Push
+  sonrası GitHub→Vercel entegrasyonu otomatik deploy tetikliyor, ayrıca bir
+  şey yapmaya gerek yok.
+- **Not:** Bu klasör OneDrive üzerinden bağlı; `.git/index.lock` gibi bir
+  önceki oturumdan kalma sahipsiz lock dosyaları veya `core.fileMode`
+  farkları (mount edilen dosyalar hep 755 gibi görünüyor) `git status`'u
+  yanıltabilir — hepsi gerçekten degisen dosyalari M olarak gösterebilir.
+  Böyle bir durumda `git config core.fileMode false` ve gerekirse
+  `.git/index.lock` dosyasini `mv` ile kenara alip tekrar denemek yeterli;
+  panik yapip `git add -A` ile hepsini commit'lememeli, gerçekten değişen
+  dosyalar `git diff --stat <dosya>` ile tek tek doğrulanmalı.
 - **Vercel/Supabase dashboard**: Claude in Chrome (mcp__claude-in-chrome
   araçları) bu oturumda kullanılabildi — Vercel'de env değişkeni eklendi,
   redeploy tetiklendi, build log'u okunup hata teşhis edildi. Yeni bir
@@ -40,14 +51,13 @@ yazmaya gerek yok:
 Test sırasında fark edilen somut boşluklar — günlük kullanımı engelleyen eksikler.
 "Şimdi" bölümündeki tüm işler tamamlandı, #5 de dahil.
 
-**⚠️ Yeni sohbet buradan devam ediyorsa önce şunu kontrol et:** #5'in son
-commit'i (`web/src/app/giris/actions.ts`'de `verifyLoginOtpAction`'a eksik
-`return` düzeltmesi) push edilmiş mi? `git log --oneline -3` ile kontrol et
-— push edilmemişse önce onu yapmadan başka işe geçme (aşağıda #5'in sonunda
-tam detay ve git komutları var). Push edilene kadar Vercel prod'da hâlâ bir
-önceki başarılı build (SITE_URL yeniden adlandırmasından ÖNCEki, yani
-`NEXT_PUBLIC_SITE_URL` kullanan sürüm) canlı kalıyor — site çalışır durumda,
-acil değil ama #5 tam bitmiş sayılmaz.
+**#5 durumu (2026-08-28 itibarıyla):** kod tarafı bitti, push edildi
+(commit `8afcd81`), Vercel prod'a başarıyla deploy edildi (doğrulandı —
+Production Deployment "Ready", canlı sürüm artık şifre + OTP giriş
+ekranını gösteriyor). Geriye yalnızca kullanıcının kendisinin yapacağı 2
+küçük manuel adım kaldı, aşağıda #5'in sonunda "Hâlâ elle yapılması
+gereken" başlığı altında listeli — onlar tamamlanana kadar #5 %100 kapalı
+sayılmaz ama üretim sitesi çalışır durumda, acil değil.
 
 Sıradaki: #6 (güvenlik sertleştirme — "Prod'a çıkmadan önce zorunlu"
 bölümü) veya kullanıcı yeni eklenen marka/tasarım taleplerini (#18-20)
@@ -190,9 +200,11 @@ olarak güvenilmeyen cihazlarda; "güvenilir cihaz" süresi **30 gün**.
   (`afterLoginRedirect` her zaman `redirect()` ile fırlatıyor ama TypeScript
   bunu `Promise<never>` zinciri üzerinden "ulaşılamaz" olarak tanımadı).
   Düzeltme: fonksiyonun sonuna tip kontrolünü memnun eden, çalışma anında
-  hiç ulaşılmayan bir `return` satırı eklendi. **Bu düzeltme cihaza yazıldı
-  ama henüz push edilmedi** — aşağıdaki git komutlarını çalıştırıp push
-  etmeden bu iş tam bitmiş sayılmaz (bkz. yukarıdaki "Şimdi" uyarısı).
+  hiç ulaşılmayan bir `return` satırı eklendi. **Kullanıcı tarafından commit
+  `8afcd81` ile push edildi, Vercel prod'a başarıyla deploy edildi** —
+  Production Deployment "Ready", Claude tarafından Chrome üzerinden canlı
+  sitede doğrulandı (yeni şifre + OTP giriş ekranı görünüyor). Bu madde tam
+  bitti.
 - **Hâlâ elle yapılması gereken (kullanıcı tarafında, Claude tamamlayamadı)**:
   Supabase Dashboard → Authentication → Email Templates → "Reset Password"
   şablonundaki bağlantının
@@ -306,6 +318,39 @@ motoruyla doldurup kullanıcıya onay ekranı sunmak.
 - Onay ekranı: kullanıcı satır satır onaylar/düzenler/reddeder —
   onaylananlar manuel akıştaki `addStatementItemAction` ile aynı şekilde
   gerçek `transactions` kaydına dönüşür
+
+### 21. Hesaplar bölümü — Gereksinim Dosyası v1 (2026-09-07)
+Kullanıcının verdiği "Gereksinim Dosyası v1.docx"taki 11 maddenin çoğu
+uygulandı (commit `9b86a20`, henüz push edilmedi — bkz. Ortam/Git notu).
+- ✅ Hesap listesi artık banka/kuruma göre gruplanmış, alt alta sıralı bir
+  liste (kart grid'i yerine) — her satırda ad, banka, not, tutar, son
+  güncelleme tarihi.
+- ✅ Banka/Kurum: bilinen bankalardan combobox + "Diğer" ile serbest metin;
+  seçilen kuruma göre renkli kısaltma rozeti (gerçek marka logoları değil,
+  isimden türetilmiş bir işaret — `src/lib/banks.ts`).
+- ✅ Not/Açıklama alanı (`accounts.notes`, yeni sütun).
+- ✅ Vadesiz Hesap ve Nakit türlerinde TL dışında USD/EUR/GBP/Altın
+  (gram)/Gümüş (gram) seçilebiliyor; kullanıcı bankasının kendi kuruyla
+  elle TL karşılığı girebiliyor (`accounts.try_equivalent_amount`, yeni
+  sütun). Bu değer artık Genel Bakış net varlık toplamı ve Zekât nisap
+  hesaplamasında ham `current_balance` yerine kullanılıyor.
+- ✅ Tutar alanlarındaki nokta/virgül girişi hatası düzeltildi (Türkçe
+  biçimi anlayan `AmountInput` + `parseTLNumber`).
+- ✅ Yatırım hesabı düzenlerken boş kalan form artık Portföy'e yönlendiren
+  bir bilgi notu gösteriyor.
+- **Karar verilip uygulanan (kullanıcıya bildirilecek, itiraz olursa
+  değiştirilir):** Kredi limiti alanı yalnızca Kredi Kartı türünde
+  gösteriliyor (madde 5). Kredi Kartı hesap türü korundu çünkü ekstre
+  özelliği (#3) buna bağlı (madde 7).
+- **Bilinçli olarak yapılmadı / ileride ele alınabilir:** TL karşılığı
+  otomatik güncel kurdan hesaplanmıyor — `exchange_rates` tablosu şu an
+  boş (hiçbir worker/cron doldurmuyor, bkz. #15), o yüzden kullanıcı
+  bankasının kendi kuruyla kendisi giriyor (docx'teki örnekle birebir
+  aynı yaklaşım). İleride otomatik TCMB kuru çekilirse bu alan varsayılan
+  değer önerecek şekilde genişletilebilir.
+- Ek: `bütçe`/`portföy` grafiklerindeki Tooltip formatter tip hatası
+  (Vercel build'ini kırabilecek türden, daha önce bir kez düzeltilmiş,
+  tekrar ortaya çıkmıştı) fark edilip yeniden düzeltildi.
 
 ---
 
