@@ -157,7 +157,7 @@ paddingAngle={2}
 ))}
 </Pie>
 <Tooltip formatter={(value) => formatCurrency(Number(value))} />
-<Legend />
+  <Legend />
 </PieChart>
 </ResponsiveContainer>
 </div>

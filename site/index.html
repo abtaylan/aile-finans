@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+  <html lang="tr">
+  <head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Aile Finans — Ailenizin Servetini Kurumsal Disiplinle Yönetin</title>
+<meta name="description" content="Aile Finans; hesaplar, bütçe, portföy, zekât ve borç takibini tek bir kurumsal panelde birleştiren aile içi varlık yönetimi platformudur." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Newsreader:ital,wght@0,500;0,600;1,500&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+  tailwind.config = {
+  theme: {
+  extend: {
+colors: {
+navy: { 950: '#0a1628', 900: '#0f1f3d', 800: '#152a52' },
+  brand: { DEFAULT: '#2a5ea8', 50: '#eef4fc', 100: '#d9e7f8' },
+gold: { DEFAULT: '#b08a3e' },
+},
+fontFamily: {
+sans: ['Inter', 'sans-serif'],
+  serif: ['Newsreader', 'serif'],
+  },
+  },
+},
+};
+</script>
+  <style>
+  .serif-num { font-variant-numeric: oldstyle-nums; }
+.grain { background-image: radial-gradient(circle at 1px 1px, rgba(255,255,255,0.04) 1px, transparent 0); background-size: 22px 22px; }
+</style>
+  </head>
+  <body class="bg-white text-navy-950 antialiased">
+
+  <header class="fixed top-0 inset-x-0 z-50 border-b border-black/5 bg-white/90 backdrop-blur">
+  <div class="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
+  <a href="#" class="flex items-center gap-2.5">
+  <span class="flex h-8 w-8 items-center justify-center rounded bg-navy-900 text-sm font-semibold text-white">A</span>
+  <span class="font-serif text-lg font-semibold tracking-tight">Aile Finans</span>
+  </a>
+  <nav class="hidden items-center gap-8 text-sm font-medium text-navy-800/80 md:flex">
+  <a href="#ozellikler" class="hover:text-navy-950">Özellikler</a>
+  <a href="#nasil-calisir" class="hover:text-navy-950">Nasıl Çalışır</a>
+  <a href="#guven" class="hover:text-navy-950">Güvenlik</a>
+  <a href="#sss" class="hover:text-navy-950">SSS</a>
+  <a href="#iletisim" class="hover:text-navy-950">İletişim</a>
+  </nav>
+  <a href="https://aile-finans-mu.vercel.app" class="hidden rounded-md bg-navy-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-navy-800 sm:inline-block">
+  Uygulamayı Görüntüle
+  </a>
+  </div>
+  </header>
+
+  <section class="grain relative overflow-hidden bg-navy-950 pb-28 pt-40 text-white">
+  <div class="pointer-events-none absolute inset-0 bg-gradient-to-b from-navy-900/40 via-navy-950 to-navy-950"></div>
+  <div class="relative mx-auto max-w-4xl px-6 text-center">
+  <p class="mb-5 text-xs font-semibold uppercase tracking-[0.25em] text-gold">Aile İçi Varlık Yönetimi</p>
+<h1 class="font-serif text-4xl font-medium leading-[1.15] tracking-tight sm:text-5xl md:text-6xl">
+Ailenizin servetini <span class="italic text-gold">tek panelden</span>, kurumsal disiplinle yönetin.
+  </h1>
+  <p class="mx-auto mt-6 max-w-2xl text-base leading-relaxed text-white/70 sm:text-lg">
+  Hesaplar, bütçe, portföy, zekât ve borç takibinizi tek bir güvenli panelde birleştiren
+Aile Finans; hane halkının finansal geleceğini birlikte, şeffaf ve düzenli şekilde
+yönetmenizi sağlar.
+</p>
+<div class="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
+<a href="https://aile-finans-mu.vercel.app/kayit" class="w-full rounded-md bg-white px-7 py-3.5 text-sm font-semibold text-navy-950 transition hover:bg-white/90 sm:w-auto">
+  Ücretsiz Başlayın
+  </a>
+  <a href="#ozellikler" class="w-full rounded-md border border-white/20 px-7 py-3.5 text-sm font-medium text-white transition hover:bg-white/5 sm:w-auto">
+  Özellikleri İnceleyin
+  </a>
+  </div>
+  <div class="serif-num mx-auto mt-16 grid max-w-2xl grid-cols-3 gap-6 border-t border-white/10 pt-8 text-left">
+  <div>
+  <p class="font-serif text-2xl font-medium text-gold">6</p>
+  <p class="mt-1 text-xs text-white/50">Entegre Modül</p>
+</div>
+<div>
+  <p class="font-serif text-2xl font-medium text-gold">Hicri</p>
+<p class="mt-1 text-xs text-white/50">Takvim Uyumlu Zekât</p>
+</div>
+<div>
+<p class="font-serif text-2xl font-medium text-gold">7/24</p>
+<p class="mt-1 text-xs text-white/50">Erişilebilir Panel</p>
+</div>
+</div>
+</div>
+</section>
+
+<section id="ozellikler" class="mx-auto max-w-6xl px-6 py-24">
+  <div class="mx-auto max-w-2xl text-center">
+  <p class="text-xs font-semibold uppercase tracking-[0.25em] text-brand">Özellikler</p>
+  <h2 class="mt-4 font-serif text-3xl font-medium tracking-tight text-navy-950 sm:text-4xl">
+  Ailenizin finansal hayatını yöneten altı modül
+</h2>
+<p class="mt-4 text-navy-800/70">
+Her modül, hane halkının gerçek ihtiyaçlarına göre tasarlandı — dağınık tabloların
+yerini tek bir kurumsal panel alır.
+  </p>
+  </div>
+
+  <div class="mt-16 grid grid-cols-1 gap-px overflow-hidden rounded-lg border border-navy-950/10 bg-navy-950/10 sm:grid-cols-2 lg:grid-cols-3">
+
+  <div class="group bg-white p-8 transition hover:bg-navy-50">
+  <div class="flex h-10 w-10 items-center justify-center rounded border border-navy-950/10 text-brand">
+  <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M4.5 8.25v10.5a1.5 1.5 0 001.5 1.5h12a1.5 1.5 0 001.5-1.5V8.25M8.25 12h1.5m3 0h3M6.75 5.25h10.5a1.5 1.5 0 011.5 1.5v1.5H5.25v-1.5a1.5 1.5 0 011.5-1.5z" /></svg>
+  </div>
+  <h3 class="mt-5 font-serif text-lg font-medium text-navy-950">Hesaplar</h3>
+  <p class="mt-2 text-sm leading-relaxed text-navy-800/70">
+  Vadesiz, vadeli, kredi kartı, nakit ve yatırım hesaplarını tek çatı altında
+toplayın; altın, gümüş, döviz ve kripto pozisyonlarını açılışta tanımlayın.
+  </p>
+  </div>
+
+  <div class="group bg-white p-8 transition hover:bg-navy-50">
+  <div class="flex h-10 w-10 items-center justify-center rounded border border-navy-950/10 text-brand">
+  <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6a7.5 7.5 0 107.5 7.5h-7.5V6z" /><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 3.75a7.505 7.505 0 016.75 6.75h-6.75V3.75z" /></svg>
+  </div>
+  <h3 class="mt-5 font-serif text-lg font-medium text-navy-950">Bütçe</h3>
+<p class="mt-2 text-sm leading-relaxed text-navy-800/70">
+Gelir ve gider kalemlerini kategorize edin; kategori kırılımı ve aylık
+trend grafikleriyle harcama disiplinini görsel olarak takip edin.
+  </p>
+  </div>
+
+  <div class="group bg-white p-8 transition hover:bg-navy-50">
+  <div class="flex h-10 w-10 items-center justify-center rounded border border-navy-950/10 text-brand">
+  <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" /></svg>
+  </div>
+  <h3 class="mt-5 font-serif text-lg font-medium text-navy-950">Portföy</h3>
+  <p class="mt-2 text-sm leading-relaxed text-navy-800/70">
+  Altın, döviz, hisse, fon ve serbest tanımlı varlıkları lot bazında izleyin;
+güncel piyasa değeri ve kâr/zarar anlık hesaplanır.
+  </p>
+  </div>
+
+  <div class="group bg-white p-8 transition hover:bg-navy-50">
+  <div class="flex h-10 w-10 items-center justify-center rounded border border-navy-950/10 text-brand">
+  <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+  </div>
+  <h3 class="mt-5 font-serif text-lg font-medium text-navy-950">Zekât</h3>
+  <p class="mt-2 text-sm leading-relaxed text-navy-800/70">
+  Hicri takvime göre gerçek havl takibi, nisap kontrolü ve yıl içi zekât
+ödemelerinin otomatik düşümüyle zekât yükümlülüğünüzü şeffaflaştırır.
+  </p>
+  </div>
+
+  <div class="group bg-white p-8 transition hover:bg-navy-50">
+  <div class="flex h-10 w-10 items-center justify-center rounded border border-navy-950/10 text-brand">
+  <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" /></svg>
+  </div>
+  <h3 class="mt-5 font-serif text-lg font-medium text-navy-950">Bağış &amp; Sadaka</h3>
+  <p class="mt-2 text-sm leading-relaxed text-navy-800/70">
+  Kime, ne zaman ve ne kadar verildiğinin kaydını tutun; isteğe bağlı olarak
+zekât matrahından düşülecek ödemeleri işaretleyin.
+  </p>
+  </div>
+
+  <div class="group bg-white p-8 transition hover:bg-navy-50">
+  <div class="flex h-10 w-10 items-center justify-center rounded border border-navy-950/10 text-brand">
+  <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zM21 15.75h.007v.008H21v-.008z" /></svg>
+  </div>
+  <h3 class="mt-5 font-serif text-lg font-medium text-navy-950">Borçlar</h3>
+  <p class="mt-2 text-sm leading-relaxed text-navy-800/70">
+  Kredi ve borçlarınızı türüne göre sınıflandırın; kalan bakiye ve aylık taksit
+yükünü tek bakışta görün, zekât matrahına otomatik yansıtılsın.
+</p>
+</div>
+
+</div>
+</section>
+
+<section id="nasil-calisir" class="bg-navy-50 py-24">
+  <div class="mx-auto max-w-6xl px-6">
+  <div class="mx-auto max-w-2xl text-center">
+  <p class="text-xs font-semibold uppercase tracking-[0.25em] text-brand">Nasıl Çalışır</p>
+  <h2 class="mt-4 font-serif text-3xl font-medium tracking-tight text-navy-950 sm:text-4xl">
+  Üç adımda ailenizin finansal panosu hazır
+</h2>
+</div>
+<div class="mt-16 grid grid-cols-1 gap-10 md:grid-cols-3">
+<div class="text-center">
+<div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-navy-950 font-serif text-lg text-white">1</div>
+<h3 class="mt-5 font-serif text-lg font-medium text-navy-950">Hesap Açın</h3>
+<p class="mt-2 text-sm leading-relaxed text-navy-800/70">
+E-posta ile kayıt olun, ailenizi tanımlayın ve hesaplarınızı ekleyin.
+</p>
+</div>
+<div class="text-center">
+<div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-navy-950 font-serif text-lg text-white">2</div>
+<h3 class="mt-5 font-serif text-lg font-medium text-navy-950">Verilerinizi Girin</h3>
+<p class="mt-2 text-sm leading-relaxed text-navy-800/70">
+  Bütçe hareketlerinizi, portföyünüzü ve borçlarınızı kaydedin —
+sistem otomatik hesaplar ve grafikler oluşturur.
+</p>
+</div>
+<div class="text-center">
+  <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-navy-950 font-serif text-lg text-white">3</div>
+  <h3 class="mt-5 font-serif text-lg font-medium text-navy-950">Takip Edin</h3>
+  <p class="mt-2 text-sm leading-relaxed text-navy-800/70">
+  Zekât yükümlülüğünüzden net değerinize kadar her şeyi tek panelden
+anlık olarak izleyin.
+  </p>
+  </div>
+  </div>
+  </div>
+  </section>
+
+  <section id="guven" class="mx-auto max-w-6xl px-6 py-24">
+  <div class="grid grid-cols-1 items-center gap-14 lg:grid-cols-2">
+  <div>
+  <p class="text-xs font-semibold uppercase tracking-[0.25em] text-brand">Güvenlik &amp; Gizlilik</p>
+  <h2 class="mt-4 font-serif text-3xl font-medium tracking-tight text-navy-950 sm:text-4xl">
+  Ailenizin verileri, ailenizin kontrolünde
+</h2>
+<p class="mt-5 text-navy-800/70">
+Finansal veriler hassastır. Aile Finans, verilerinizi endüstri standardı
+şifreleme ile korur ve erişim yalnızca sizin yetkilendirdiğiniz aile
+üyeleriyle sınırlıdır.
+  </p>
+  <ul class="mt-8 space-y-4">
+  <li class="flex items-start gap-3">
+  <span class="mt-0.5 flex h-5 w-5 flex-none items-center justify-center rounded-full bg-brand/10 text-brand">
+  <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+  </span>
+  <span class="text-sm text-navy-800/80">Şifreli veritabanı ve satır bazlı erişim politikaları (RLS)</span>
+  </li>
+  <li class="flex items-start gap-3">
+  <span class="mt-0.5 flex h-5 w-5 flex-none items-center justify-center rounded-full bg-brand/10 text-brand">
+  <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+  </span>
+  <span class="text-sm text-navy-800/80">İki faktörlü kimlik doğrulama (e-posta ile OTP)</span>
+  </li>
+  <li class="flex items-start gap-3">
+  <span class="mt-0.5 flex h-5 w-5 flex-none items-center justify-center rounded-full bg-brand/10 text-brand">
+  <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+  </span>
+  <span class="text-sm text-navy-800/80">Verileriniz üçüncü taraflarla paylaşılmaz veya reklam amacıyla kullanılmaz</span>
+</li>
+</ul>
+</div>
+  <div class="rounded-lg border border-navy-950/10 bg-navy-950 p-10 text-white">
+  <p class="font-serif text-xl italic leading-relaxed text-white/90">
+  &quot;Bir ailenin serveti, o ailenin özel meselesidir. Aile Finans'ı bu
+  ilkeyle tasarladık.&quot;
+</p>
+  <p class="mt-6 text-sm text-white/50">Aile Finans Ekibi</p>
+</div>
+</div>
+</section>
+
+<section id="sss" class="bg-navy-50 py-24">
+  <div class="mx-auto max-w-3xl px-6">
+  <div class="text-center">
+  <p class="text-xs font-semibold uppercase tracking-[0.25em] text-brand">Sık Sorulan Sorular</p>
+<h2 class="mt-4 font-serif text-3xl font-medium tracking-tight text-navy-950 sm:text-4xl">
+Merak edilenler
+</h2>
+  </div>
+  <div class="mt-14 divide-y divide-navy-950/10 border-t border-b border-navy-950/10">
+
+  <details class="group py-6">
+  <summary class="flex cursor-pointer list-none items-center justify-between font-medium text-navy-950">
+  Aile Finans ücretsiz mi?
+  <span class="ml-4 flex h-6 w-6 flex-none items-center justify-center rounded-full border border-navy-950/15 text-sm transition group-open:rotate-45">+</span>
+  </summary>
+  <p class="mt-3 pr-8 text-sm leading-relaxed text-navy-800/70">
+  Kayıt olmak ve temel modülleri kullanmak ücretsizdir. Kurumsal veya
+genişletilmiş ihtiyaçlar için ekibimizle iletişime geçebilirsiniz.
+  </p>
+  </details>
+
+  <details class="group py-6">
+  <summary class="flex cursor-pointer list-none items-center justify-between font-medium text-navy-950">
+  Verilerimi ailemdeki diğer kişiler görebilir mi?
+<span class="ml-4 flex h-6 w-6 flex-none items-center justify-center rounded-full border border-navy-950/15 text-sm transition group-open:rotate-45">+</span>
+</summary>
+<p class="mt-3 pr-8 text-sm leading-relaxed text-navy-800/70">
+Yalnızca sizin oluşturduğunuz veya davet ettiğiniz aile hesabındaki
+üyeler, o hesaba ait verileri görebilir. Her hesap birbirinden tamamen
+izoledir.
+  </p>
+  </details>
+
+  <details class="group py-6">
+  <summary class="flex cursor-pointer list-none items-center justify-between font-medium text-navy-950">
+  Zekât hesaplaması hangi esaslara dayanıyor?
+  <span class="ml-4 flex h-6 w-6 flex-none items-center justify-center rounded-full border border-navy-950/15 text-sm transition group-open:rotate-45">+</span>
+  </summary>
+  <p class="mt-3 pr-8 text-sm leading-relaxed text-navy-800/70">
+  Hesaplama, altın nisabı ve Hicri takvime göre bir kameri yıllık havl
+süresi esas alınarak yapılır. Kesin fetva gerektiren durumlarda Diyanet
+İşleri Başkanlığı ile teyitleşmenizi öneririz.
+  </p>
+  </details>
+
+  <details class="group py-6">
+  <summary class="flex cursor-pointer list-none items-center justify-between font-medium text-navy-950">
+  Mobil cihazlardan kullanabilir miyim?
+  <span class="ml-4 flex h-6 w-6 flex-none items-center justify-center rounded-full border border-navy-950/15 text-sm transition group-open:rotate-45">+</span>
+  </summary>
+  <p class="mt-3 pr-8 text-sm leading-relaxed text-navy-800/70">
+  Evet, Aile Finans tarayıcı üzerinden tüm cihazlarda erişilebilir şekilde
+tasarlanmıştır.
+  </p>
+  </details>
+
+  <details class="group py-6">
+  <summary class="flex cursor-pointer list-none items-center justify-between font-medium text-navy-950">
+  Kurumsal veya toplu kullanım için destek alabilir miyim?
+  <span class="ml-4 flex h-6 w-6 flex-none items-center justify-center rounded-full border border-navy-950/15 text-sm transition group-open:rotate-45">+</span>
+  </summary>
+  <p class="mt-3 pr-8 text-sm leading-relaxed text-navy-800/70">
+  Evet, aşağıdaki iletişim bilgilerinden bize ulaşarak kurumsal ihtiyaçlarınızı
+paylaşabilirsiniz.
+  </p>
+  </details>
+
+  </div>
+  </div>
+  </section>
+
+  <section id="iletisim" class="mx-auto max-w-6xl px-6 py-24">
+  <div class="overflow-hidden rounded-lg bg-navy-950">
+  <div class="grid grid-cols-1 lg:grid-cols-2">
+  <div class="p-10 sm:p-14">
+  <p class="text-xs font-semibold uppercase tracking-[0.25em] text-gold">İletişim</p>
+<h2 class="mt-4 font-serif text-3xl font-medium tracking-tight text-white">
+Sorularınız için buradayız
+</h2>
+<p class="mt-5 text-sm leading-relaxed text-white/60">
+Ürün, ortaklık veya kurumsal kullanım hakkında görüşmek isterseniz
+aşağıdaki kanallardan bize ulaşabilirsiniz.
+</p>
+<div class="mt-8 space-y-3 text-sm">
+<p class="text-white/80">
+<span class="text-white/40">E-posta:</span>
+<a href="mailto:iletisim@ailefinans.app" class="ml-1 text-white underline decoration-white/30 underline-offset-4 hover:decoration-white">iletisim@ailefinans.app</a>
+  </p>
+  <p class="text-white/80">
+  <span class="text-white/40">Uygulama:</span>
+  <a href="https://aile-finans-mu.vercel.app" class="ml-1 text-white underline decoration-white/30 underline-offset-4 hover:decoration-white">aile-finans-mu.vercel.app</a>
+  </p>
+  </div>
+  </div>
+  <form class="border-t border-white/10 p-10 sm:border-l sm:border-t-0 sm:p-14" onsubmit="event.preventDefault(); window.location.href = 'mailto:iletisim@ailefinans.app?subject=' + encodeURIComponent(this.konu.value) + '&body=' + encodeURIComponent(this.mesaj.value + ' - ' + this.eposta.value);">
+  <div class="space-y-4">
+  <div>
+  <label class="text-xs font-medium text-white/60">E-posta</label>
+  <input name="eposta" type="email" required class="mt-1.5 w-full rounded border border-white/15 bg-white/5 px-3.5 py-2.5 text-sm text-white placeholder-white/30 outline-none focus:border-gold" placeholder="ornek@eposta.com" />
+  </div>
+  <div>
+  <label class="text-xs font-medium text-white/60">Konu</label>
+  <input name="konu" type="text" required class="mt-1.5 w-full rounded border border-white/15 bg-white/5 px-3.5 py-2.5 text-sm text-white placeholder-white/30 outline-none focus:border-gold" placeholder="Kurumsal görüşme talebi" />
+  </div>
+  <div>
+  <label class="text-xs font-medium text-white/60">Mesaj</label>
+  <textarea name="mesaj" rows="3" required class="mt-1.5 w-full rounded border border-white/15 bg-white/5 px-3.5 py-2.5 text-sm text-white placeholder-white/30 outline-none focus:border-gold" placeholder="Size nasıl yardımcı olabiliriz?"></textarea>
+  </div>
+  <button type="submit" class="w-full rounded bg-gold px-5 py-3 text-sm font-semibold text-navy-950 transition hover:bg-gold/90">
+  Mesaj Gönder
+</button>
+</div>
+</form>
+</div>
+</div>
+</section>
+
+  <footer class="border-t border-navy-950/10 py-10">
+  <div class="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-6 text-xs text-navy-800/50 sm:flex-row">
+  <p>© 2026 Aile Finans. Tüm hakları saklıdır.</p>
+  <div class="flex items-center gap-6">
+  <a href="#" class="hover:text-navy-950">Gizlilik Politikası</a>
+  <a href="#" class="hover:text-navy-950">Kullanım Koşulları</a>
+  </div>
+  </div>
+  </footer>
+
+  </body>
+  </html>
+  

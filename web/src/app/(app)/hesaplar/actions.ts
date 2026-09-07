@@ -60,6 +60,21 @@ const tryEquivalentAmount =
     ? parseTLNumber(tryEquivalentRaw)
     : null;
 
+// IBAN, veritabaninda uygulama seviyesinde sifrelenir (pgcrypto).
+// Sifreleme anahtari yalnizca sunucu ortam degiskeninde (FIELD_ENCRYPTION_KEY)
+// tutulur; veritabaninda hicbir zaman saklanmaz.
+let encryptedIban: string | null = null;
+  if (iban) {
+    const encryptionKey = process.env.FIELD_ENCRYPTION_KEY;
+    if (!encryptionKey) throw new Error("Sifreleme anahtari yapilandirilmamis.");
+    const { data, error: encError } = await supabase.rpc("encrypt_field", {
+      plain: iban,
+      key: encryptionKey,
+    });
+    if (encError) throw new Error(encError.message);
+    encryptedIban = data as string;
+  }
+
 const payload = {
   family_id: profile.family_id,
   owner_user_id: profile.id,
@@ -67,7 +82,7 @@ const payload = {
   bank_name: bankName || null,
   account_type: accountType,
   currency,
-  iban: iban || null,
+  iban: encryptedIban,
   notes: notes || null,
   current_balance: accountType === "investment" ? 0 : currentBalance,
   credit_limit: creditLimit,
