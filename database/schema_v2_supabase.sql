@@ -105,6 +105,8 @@ CREATE TABLE accounts (
     iban                VARCHAR(34),
     current_balance     NUMERIC(18,4) NOT NULL DEFAULT 0,
     credit_limit        NUMERIC(18,4),
+    notes               TEXT,
+    try_equivalent_amount NUMERIC(18,2),
     is_active           BOOLEAN NOT NULL DEFAULT true,
     display_order       INTEGER NOT NULL DEFAULT 0,
     color               VARCHAR(7),

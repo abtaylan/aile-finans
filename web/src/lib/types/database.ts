@@ -74,10 +74,15 @@ export interface Account {
   iban: string | null;
   current_balance: number;
   credit_limit: number | null;
+  /** Doviz/kiymetli maden hesaplarinda (currency != TRY) kullanicinin elle
+   * girdigi, kendi bankasinin kuruyla hesaplanmis TL karsiligi (opsiyonel). */
+  try_equivalent_amount: number | null;
+  notes: string | null;
   is_active: boolean;
   display_order: number;
   color: string | null;
   icon: string | null;
+  updated_at: string;
 }
 
 export interface Category {

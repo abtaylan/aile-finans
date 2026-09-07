@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Wallet, TrendingUp, HandCoins, ArrowUpRight, ArrowDownRight } from "lucide-react";
 import { requireFamilyContext } from "@/lib/auth-context";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { accountValueInTry, formatAccountAmount, formatCurrency, formatDate } from "@/lib/utils";
 import type { Account, AssetHolding, Loan, Transaction } from "@/lib/types/database";
 
 export default async function GenelBakisPage() {
@@ -32,7 +32,7 @@ export default async function GenelBakisPage() {
 
   const cashTotal = typedAccounts
     .filter((a) => a.account_type !== "credit_card" && a.account_type !== "loan")
-    .reduce((sum, a) => sum + Number(a.current_balance), 0);
+    .reduce((sum, a) => sum + accountValueInTry(a), 0);
   const portfolioCost = typedHoldings.reduce((sum, h) => sum + Number(h.total_cost_basis), 0);
   const loanDebt = typedLoans.reduce((sum, l) => sum + Number(l.total_remaining), 0);
   const netWorth = cashTotal + portfolioCost - loanDebt;
@@ -179,9 +179,16 @@ export default async function GenelBakisPage() {
                       />
                       <p className="text-sm text-[var(--text-primary)]">{a.name}</p>
                     </div>
-                    <p className="text-sm font-medium text-[var(--text-primary)]">
-                      {formatCurrency(a.current_balance, a.currency)}
-                    </p>
+                    <div className="text-right">
+                      <p className="text-sm font-medium text-[var(--text-primary)]">
+                        {formatAccountAmount(a.current_balance, a.currency)}
+                      </p>
+                      {a.currency !== "TRY" && a.try_equivalent_amount != null && (
+                        <p className="text-xs text-[var(--text-muted)]">
+                          ≈ {formatCurrency(a.try_equivalent_amount, "TRY")}
+                        </p>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>

@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { requireFamilyContext } from "@/lib/auth-context";
 import { createCustomAsset } from "@/lib/custom-asset";
+import { parseTLNumber } from "@/lib/utils";
 import type { AccountType } from "@/lib/types/database";
 
 const ACCOUNT_TYPES: AccountType[] = [
@@ -14,6 +15,12 @@ const ACCOUNT_TYPES: AccountType[] = [
   "loan",
   ];
 
+// Vadesiz Hesap (checking) ve Nakit (cash) icin, TL disinda secilebilen
+// para birimi / kiymetli maden kodlari (Gereksinim v1, madde 9-10).
+// XAU/XAG gram bazli altin/gumus icin kullaniliyor (bkz. lib/utils.ts).
+const SELECTABLE_CURRENCIES = ["TRY", "USD", "EUR", "GBP", "XAU", "XAG"];
+const MULTI_CURRENCY_TYPES: AccountType[] = ["checking", "cash"];
+
 export async function upsertAccountAction(formData: FormData) {
   const { supabase, profile } = await requireFamilyContext();
 
@@ -21,15 +28,37 @@ const id = String(formData.get("id") || "").trim();
   const name = String(formData.get("name") || "").trim();
   const bankName = String(formData.get("bankName") || "").trim();
   const accountType = String(formData.get("accountType") || "checking") as AccountType;
-  const currency = String(formData.get("currency") || "TRY").trim();
   const iban = String(formData.get("iban") || "").trim();
-  const currentBalance = Number(formData.get("currentBalance") || 0);
-  const creditLimitRaw = String(formData.get("creditLimit") || "").trim();
+  const notes = String(formData.get("notes") || "").trim();
+  const currentBalance = parseTLNumber(String(formData.get("currentBalance") || ""));
   const color = String(formData.get("color") || "#2a78d6").trim();
 
 if (!name || !ACCOUNT_TYPES.includes(accountType)) {
   throw new Error("Gecersiz hesap bilgisi.");
 }
+
+// Para birimi: yalnizca Vadesiz Hesap / Nakit turlerinde secilebilir
+// (Gereksinim v1, madde 9-10) - digerleri her zaman TRY.
+let currency = "TRY";
+if (MULTI_CURRENCY_TYPES.includes(accountType)) {
+  const requested = String(formData.get("currency") || "TRY").trim().toUpperCase();
+  currency = SELECTABLE_CURRENCIES.includes(requested) ? requested : "TRY";
+}
+
+// Kredi limiti yalnizca Kredi Karti hesaplarinda anlamli (Gereksinim v1,
+// madde 5) - diger turlerde her zaman null olarak tutulur.
+const creditLimitRaw = String(formData.get("creditLimit") || "").trim();
+const creditLimit =
+  accountType === "credit_card" && creditLimitRaw ? parseTLNumber(creditLimitRaw) : null;
+
+// TL karsiligi yalnizca doviz/kiymetli maden bakiyesi olan hesaplarda
+// anlamli (Gereksinim v1, madde 9-10) - kullanicinin bankasinin kendi
+// kuruyla elle girdigi opsiyonel bir alan.
+const tryEquivalentRaw = String(formData.get("tryEquivalentAmount") || "").trim();
+const tryEquivalentAmount =
+  MULTI_CURRENCY_TYPES.includes(accountType) && currency !== "TRY" && tryEquivalentRaw
+    ? parseTLNumber(tryEquivalentRaw)
+    : null;
 
 const payload = {
   family_id: profile.family_id,
@@ -39,8 +68,10 @@ const payload = {
   account_type: accountType,
   currency,
   iban: iban || null,
+  notes: notes || null,
   current_balance: accountType === "investment" ? 0 : currentBalance,
-  credit_limit: creditLimitRaw ? Number(creditLimitRaw) : null,
+  credit_limit: creditLimit,
+  try_equivalent_amount: tryEquivalentAmount,
   color,
 };
 
@@ -59,8 +90,8 @@ let accountId = id;
   }
 
 if (!id && accountType === "investment") {
-  const openingQuantity = Number(formData.get("openingQuantity") || 0);
-  const openingUnitPrice = Number(formData.get("openingUnitPrice") || 0);
+  const openingQuantity = parseTLNumber(String(formData.get("openingQuantity") || ""));
+  const openingUnitPrice = parseTLNumber(String(formData.get("openingUnitPrice") || ""));
   let assetId = String(formData.get("assetId") || "");
   const newAssetName = String(formData.get("newAssetName") || "").trim();
 

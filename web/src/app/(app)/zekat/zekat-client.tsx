@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { accountValueInTry, formatCurrency, formatDate } from "@/lib/utils";
 import { hijriDateLabel, isHawlComplete, hawlCompletionDate, daysUntilHawlCompletion } from "@/lib/hijri";
 import { deletePropertyAction, deleteLoanAction, setHawlStartDateAction, deleteZakatPaymentAction } from "./actions";
 import { PropertyDialog } from "./property-dialog";
@@ -60,7 +60,7 @@ const today = new Date().toISOString().slice(0, 10);
 
 const cash = accounts
 .filter((a) => ["checking", "savings", "cash"].includes(a.account_type))
-.reduce((sum, a) => sum + Number(a.current_balance), 0);
+.reduce((sum, a) => sum + accountValueInTry(a), 0);
 
 const portfolioValue = holdings.reduce((sum, h) => {
 const asset = assetById.get(h.asset_id);

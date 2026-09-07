@@ -1,11 +1,14 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { Plus, Pencil } from "lucide-react";
 import { upsertAccountAction } from "./actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { AmountInput } from "@/components/ui/amount-input";
 import {
 Dialog,
 DialogContent,
@@ -21,6 +24,7 @@ SelectItem,
 SelectTrigger,
 SelectValue,
 } from "@/components/ui/select";
+import { TURKISH_BANKS, getBankBadge } from "@/lib/banks";
 import type { Account, AccountType, Asset, AssetType } from "@/lib/types/database";
 
 const ACCOUNT_TYPE_LABELS: Record<string, string> = {
@@ -42,13 +46,49 @@ tefas_fund: "Yatırım Fonu (TEFAS)",
 other: "Diğer",
 };
 
+// Vadesiz Hesap / Nakit turlerinde secilebilen para birimleri (Gereksinim
+// v1, madde 9-10). XAU/XAG = gram bazli altin/gumus (bkz. lib/utils.ts).
+const CURRENCY_OPTIONS: { value: string; label: string }[] = [
+{ value: "TRY", label: "Türk Lirası (TL)" },
+{ value: "USD", label: "Amerikan Doları (USD)" },
+{ value: "EUR", label: "Euro (EUR)" },
+{ value: "GBP", label: "İngiliz Sterlini (GBP)" },
+{ value: "XAU", label: "Altın (gram)" },
+{ value: "XAG", label: "Gümüş (gram)" },
+];
+const CURRENCY_UNIT_LABELS: Record<string, string> = {
+USD: "USD",
+EUR: "EUR",
+GBP: "GBP",
+XAU: "gram Altın",
+XAG: "gram Gümüş",
+};
+const MULTI_CURRENCY_TYPES: AccountType[] = ["checking", "cash"];
+
 const PALETTE = ["#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4", "#4a3aa7"];
 
 export function AccountDialog({ account, assets = [] }: { account?: Account; assets?: Asset[] }) {
 const [open, setOpen] = useState(false);
 const [accountType, setAccountType] = useState<AccountType>(account?.account_type ?? "checking");
 const [assetCategory, setAssetCategory] = useState<AssetType>("gold");
+const [currency, setCurrency] = useState<string>(account?.currency ?? "TRY");
 const isEdit = Boolean(account);
+const isMultiCurrencyType = MULTI_CURRENCY_TYPES.includes(accountType);
+
+const knownBankNames = useMemo(() => new Set(TURKISH_BANKS.map((b) => b.name)), []);
+const [bankChoice, setBankChoice] = useState<string>(() => {
+if (!account?.bank_name) return "__none__";
+return knownBankNames.has(account.bank_name) ? account.bank_name : "__other__";
+});
+const [manualBank, setManualBank] = useState<string>(() =>
+account?.bank_name && !knownBankNames.has(account.bank_name) ? account.bank_name : ""
+);
+const bankBadge =
+bankChoice === "__other__"
+? getBankBadge(manualBank)
+: bankChoice === "__none__"
+? null
+: getBankBadge(bankChoice);
 
 const categoryAssets = useMemo(
 () => assets.filter((a) => a.asset_type === assetCategory),
@@ -92,8 +132,43 @@ required
 </div>
 <div className="grid grid-cols-2 gap-3">
 <div className="flex flex-col gap-1.5">
-<Label htmlFor="bankName">Banka / Kurum</Label>
-<Input id="bankName" name="bankName" defaultValue={account?.bank_name ?? ""} />
+<Label htmlFor="bankChoice">Banka / Kurum</Label>
+<Select value={bankChoice} onValueChange={setBankChoice}>
+<SelectTrigger id="bankChoice">
+<SelectValue />
+</SelectTrigger>
+<SelectContent>
+<SelectItem value="__none__">Seçilmedi</SelectItem>
+{TURKISH_BANKS.map((b) => (
+<SelectItem key={b.name} value={b.name}>
+{b.name}
+</SelectItem>
+))}
+<SelectItem value="__other__">Diğer (elle gir)...</SelectItem>
+</SelectContent>
+</Select>
+{bankChoice === "__other__" ? (
+<Input
+name="bankName"
+value={manualBank}
+onChange={(e) => setManualBank(e.target.value)}
+placeholder="Örn. Ev, Yurtdışı, Arkadaşta emanet..."
+className="mt-1.5"
+/>
+) : (
+<input type="hidden" name="bankName" value={bankChoice === "__none__" ? "" : bankChoice} />
+)}
+{bankBadge && (
+<div className="mt-1 flex items-center gap-1.5 text-xs text-[var(--text-secondary)]">
+<span
+className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[9px] font-semibold text-white"
+style={{ backgroundColor: bankBadge.color }}
+>
+{bankBadge.abbr}
+</span>
+{bankBadge.name}
+</div>
+)}
 </div>
 <div className="flex flex-col gap-1.5">
 <Label htmlFor="accountType">Hesap Türü</Label>
@@ -117,7 +192,16 @@ onValueChange={(v) => setAccountType(v as AccountType)}
 </div>
 
 {accountType === "investment" ? (
-!isEdit && (
+isEdit ? (
+<div className="rounded-lg border border-[var(--border)] p-3 text-sm text-[var(--text-secondary)]">
+Yatırım hesabındaki pozisyonlar (altın, döviz, hisse, fon vb.){" "}
+<Link href="/portfoy" className="underline">
+Portföy
+</Link>{" "}
+sayfasından eklenip yönetilir. Buradan yalnızca hesabın adı, banka/kurum
+bilgisi ve notu güncellenebilir.
+</div>
+) : (
 <div className="flex flex-col gap-3 rounded-lg border border-[var(--border)] p-3">
 <p className="text-xs font-medium text-[var(--text-secondary)]">
 Yatırım hesabı - isteğe bağlı olarak açılış pozisyonunu hemen ekleyebilirsin
@@ -169,21 +253,13 @@ placeholder="Örn. Aile Halısı, Özel Koleksiyon..."
 <div className="grid grid-cols-2 gap-3">
 <div className="flex flex-col gap-1.5">
 <Label htmlFor="openingQuantity">Miktar</Label>
-<Input
-id="openingQuantity"
-name="openingQuantity"
-type="number"
-step="0.00000001"
-placeholder="Boş = pozisyonsuz"
-/>
+<AmountInput id="openingQuantity" name="openingQuantity" placeholder="Boş = pozisyonsuz" />
 </div>
 <div className="flex flex-col gap-1.5">
 <Label htmlFor="openingUnitPrice">Birim Fiyat (TL)</Label>
-<Input
+<AmountInput
 id="openingUnitPrice"
 name="openingUnitPrice"
-type="number"
-step="0.01"
 placeholder="Döviz için TCMB satış kuru"
 />
 </div>
@@ -191,33 +267,71 @@ placeholder="Döviz için TCMB satış kuru"
 </div>
 )
 ) : (
+<div className="flex flex-col gap-3">
+{isMultiCurrencyType && (
+<div className="flex flex-col gap-1.5">
+<Label htmlFor="currency">Para Birimi / Varlık</Label>
+<Select name="currency" value={currency} onValueChange={setCurrency}>
+<SelectTrigger id="currency">
+<SelectValue />
+</SelectTrigger>
+<SelectContent>
+{CURRENCY_OPTIONS.map((c) => (
+<SelectItem key={c.value} value={c.value}>
+{c.label}
+</SelectItem>
+))}
+</SelectContent>
+</Select>
+</div>
+)}
 <div className="grid grid-cols-2 gap-3">
 <div className="flex flex-col gap-1.5">
-<Label htmlFor="currentBalance">Güncel Bakiye</Label>
-<Input
+<Label htmlFor="currentBalance">
+Güncel Bakiye
+{isMultiCurrencyType && currency !== "TRY" ? ` (${CURRENCY_UNIT_LABELS[currency]})` : ""}
+</Label>
+<AmountInput
 id="currentBalance"
 name="currentBalance"
-type="number"
-step="0.01"
 defaultValue={account?.current_balance ?? 0}
 />
 </div>
+{accountType === "credit_card" && (
 <div className="flex flex-col gap-1.5">
 <Label htmlFor="creditLimit">Kredi Limiti (opsiyonel)</Label>
-<Input
-id="creditLimit"
-name="creditLimit"
-type="number"
-step="0.01"
-defaultValue={account?.credit_limit ?? ""}
+<AmountInput id="creditLimit" name="creditLimit" defaultValue={account?.credit_limit ?? ""} />
+</div>
+)}
+</div>
+{isMultiCurrencyType && currency !== "TRY" && (
+<div className="flex flex-col gap-1.5">
+<Label htmlFor="tryEquivalentAmount">
+Bankanızın Güncel Kuruyla TL Karşılığı (opsiyonel)
+</Label>
+<AmountInput
+id="tryEquivalentAmount"
+name="tryEquivalentAmount"
+defaultValue={account?.try_equivalent_amount ?? ""}
+placeholder="Örn. 45.000"
 />
 </div>
+)}
 </div>
 )}
 
 <div className="flex flex-col gap-1.5">
 <Label htmlFor="iban">IBAN (opsiyonel)</Label>
 <Input id="iban" name="iban" defaultValue={account?.iban ?? ""} />
+</div>
+<div className="flex flex-col gap-1.5">
+<Label htmlFor="notes">Not / Açıklama (opsiyonel)</Label>
+<Textarea
+id="notes"
+name="notes"
+defaultValue={account?.notes ?? ""}
+placeholder="Bu hesapla ilgili kısa bir not..."
+/>
 </div>
 <div className="flex flex-col gap-1.5">
 <Label>Renk</Label>
@@ -239,7 +353,6 @@ style={{ backgroundColor: c }}
 ))}
 </div>
 </div>
-<input type="hidden" name="currency" value={account?.currency ?? "TRY"} />
 <DialogFooter>
 <Button type="submit">{isEdit ? "Kaydet" : "Ekle"}</Button>
 </DialogFooter>
