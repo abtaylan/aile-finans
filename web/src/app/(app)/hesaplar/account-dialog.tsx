@@ -117,7 +117,6 @@ return (
   <Label htmlFor="name">Hesap Adı</Label>
   <Input id="name" name="name" defaultValue={account?.name} placeholder="Örn. Ana Vadesiz Hesap" required />
   </div>
-  </DialogTrigger>
     <div className="grid grid-cols-2 gap-3">
     <div className="flex flex-col gap-1.5">
     <Label htmlFor="bankChoice">Banka / Kurum</Label>
@@ -297,7 +296,6 @@ return (
   </DialogFooter>
   </DialogContent>
   </Dialog>
-  </Dialog>
   );
     }
-  </div>
+
