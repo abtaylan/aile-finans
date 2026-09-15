@@ -47,7 +47,7 @@ const yearSwitcher = (
       <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
       <div>
-      <h1 className="text-xl font-semibold text-[var(--text-primary)]">Hesaplar — {selectedYear}</h1>h1>
+      <h1 className="text-xl font-semibold text-[var(--text-primary)]">Hesaplar — {selectedYear}</h1>
       <p className="text-sm text-[var(--text-secondary)]">Bu yıl kapatılmış, kayıtlar donduruldu.</p>
       </div>
         {yearSwitcher}
@@ -147,4 +147,3 @@ const yearSwitcher = (
     </div>
     );
 }
-</div>
