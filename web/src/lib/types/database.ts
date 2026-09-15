@@ -77,6 +77,7 @@ export interface Account {
   /** Doviz/kiymetli maden hesaplarinda (currency != TRY) kullanicinin elle
    * girdigi, kendi bankasinin kuruyla hesaplanmis TL karsiligi (opsiyonel). */
   try_equivalent_amount: number | null;
+  fx_rate: number | null;
   notes: string | null;
   is_active: boolean;
   display_order: number;
