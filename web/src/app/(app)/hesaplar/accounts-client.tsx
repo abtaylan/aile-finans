@@ -24,7 +24,7 @@ const NO_BANK_KEY = "__none__";
 function groupByBank(accounts: Account[]) {
 const map = new Map<string, Account[]>();
 for (const account of accounts) {
-const key = account.bank_name?.trim() || NO_BANK_KEY;
+const trimmed = account.bank_name?.trim(); const key = trimmed ? getBankBadge(trimmed)?.name ?? trimmed : NO_BANK_KEY;
 if (!map.has(key)) map.set(key, []);
 map.get(key)!.push(account);
 }
