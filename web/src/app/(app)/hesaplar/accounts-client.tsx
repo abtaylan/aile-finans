@@ -174,7 +174,7 @@ style={{ backgroundColor: badge?.color ?? account.color ?? "#2a78d6" }}
 </div>
 <div className="flex items-center gap-1">
 <AccountDialog account={account} assets={assets} />
-<form action={deleteAccountAction}>
+<form action={deleteAccountAction} onSubmit={(e) => { if (!confirm("Bu hesabı silmek istediğinize emin misiniz? Bu işlem geri alınamaz.")) e.preventDefault(); }}>
 <input type="hidden" name="id" value={account.id} />
 <Button
 type="submit"
