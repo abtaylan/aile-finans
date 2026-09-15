@@ -16,7 +16,6 @@ savings: "Vadeli Hesap",
 credit_card: "Kredi Kartı",
 cash: "Nakit",
 investment: "Yatırım Hesabı",
-loan: "Kredi Hesabı",
 };
 
 const NO_BANK_KEY = "__none__";
