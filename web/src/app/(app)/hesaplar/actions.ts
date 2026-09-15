@@ -172,3 +172,37 @@ const { error } = await supabase.from("accounts").delete().eq("id", id);
 revalidatePath("/hesaplar");
   revalidatePath("/");
 }
+
+export async function closeYearAction(formData: FormData) {
+  const { supabase, profile } = await requireFamilyContext();
+  const year = Number(formData.get("year"));
+  if (!year || year < 2000 || year > 2100) throw new Error("Gecersiz yil.");
+
+const { data: accounts, error } = await supabase
+  .from("accounts")
+  .select("*")
+  .eq("family_id", profile.family_id)
+  .eq("is_active", true);
+  if (error) throw new Error(error.message);
+
+const rows = (accounts ?? []).map((a) => ({
+  family_id: profile.family_id,
+  account_id: a.id,
+  year,
+  balance: a.current_balance,
+  currency: a.currency,
+  fx_rate: a.fx_rate,
+  balance_try:
+    a.currency?.trim() === "TRY" ? a.current_balance : (a.try_equivalent_amount ?? 0),
+  closed_by: profile.id,
+}));
+
+if (rows.length > 0) {
+  const { error: insertError } = await supabase
+  .from("account_year_closings")
+  .upsert(rows, { onConflict: "account_id,year" });
+  if (insertError) throw new Error(insertError.message);
+}
+
+revalidatePath("/hesaplar");
+}
