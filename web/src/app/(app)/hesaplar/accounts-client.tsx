@@ -21,6 +21,13 @@ loan: "Kredi Hesabı",
 
 const NO_BANK_KEY = "__none__";
 
+function accountTryValue(account: Account): number {
+  if (account.account_type === "investment") return 0;
+  if (account.currency?.trim() === "TRY") return Number(account.current_balance) || 0;
+  return Number(account.try_equivalent_amount) || 0;
+}
+
+
 function groupByBank(accounts: Account[]) {
 const map = new Map<string, Account[]>();
 for (const account of accounts) {
@@ -106,9 +113,10 @@ Henüz hiç hesap eklenmedi. Başlamak için &quot;Hesap Ekle&quot; butonuna tı
 <Card className="overflow-hidden p-0">
 {groups.map((group) => {
 const groupBadge = group.key !== NO_BANK_KEY ? getBankBadge(group.label) : null;
+  const groupTotal = group.accounts.reduce((sum, a) => sum + accountTryValue(a), 0);
 return (
 <div key={group.key} className="flex flex-col">
-<div className="flex items-center gap-2 border-b border-[var(--border)] bg-[var(--surface-2)] px-4 py-2">
+<div className="flex items-center justify-between gap-2 border-b border-[var(--border)] bg-[var(--surface-2)] px-4 py-2">
 {groupBadge && (
 <span
 className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[9px] font-semibold text-white"
@@ -121,6 +129,7 @@ style={{ backgroundColor: groupBadge.color }}
 {group.label}
 </p>
 <span className="text-xs text-[var(--text-muted)]">({group.accounts.length})</span>
+  <span className="ml-auto text-sm font-semibold text-[var(--text-primary)]">{formatCurrency(groupTotal, "TRY")}</span>
 </div>
 {group.accounts.map((account) => {
 const badge = getBankBadge(account.bank_name);
@@ -218,6 +227,12 @@ Ekstreler
 })}
 </Card>
 )}
+  {accounts.length > 0 && (
+  <div className="flex items-center justify-between rounded-lg border border-[var(--border)] bg-[var(--surface-2)] px-4 py-3">
+  <p className="text-sm font-semibold text-[var(--text-primary)]">Tüm Hesaplar Toplamı</p>
+  <p className="text-base font-bold text-[var(--text-primary)]">{formatCurrency(accounts.reduce((sum, a) => sum + accountTryValue(a), 0), "TRY")}</p>
+  </div>
+)}</div>
 </div>
 );
 }
