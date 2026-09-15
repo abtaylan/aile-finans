@@ -19,7 +19,6 @@ const ACCOUNT_TYPE_LABELS: Record<string, string> = {
   credit_card: "Kredi Kartı",
   cash: "Nakit",
   investment: "Yatırım Hesabı",
-  loan: "Kredi Hesabı",
 };
 
 const ASSET_CATEGORY_LABELS: Record<AssetType, string> = {
