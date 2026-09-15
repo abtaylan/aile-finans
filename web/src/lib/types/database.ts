@@ -272,3 +272,16 @@ export interface BankStatementStagingTransaction {
 export interface StatementWithItems extends BankStatementUpload {
   items: BankStatementStagingTransaction[];
 }
+
+export interface AccountYearClosing {
+  id: string;
+  family_id: string;
+  account_id: string;
+  year: number;
+  balance: number;
+  currency: string;
+  fx_rate: number | null;
+  balance_try: number;
+  closed_at: string;
+  closed_by: string | null;
+}
