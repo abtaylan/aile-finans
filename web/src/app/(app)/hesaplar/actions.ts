@@ -51,14 +51,22 @@ const creditLimitRaw = String(formData.get("creditLimit") || "").trim();
 const creditLimit =
   accountType === "credit_card" && creditLimitRaw ? parseTLNumber(creditLimitRaw) : null;
 
-// TL karsiligi yalnizca doviz/kiymetli maden bakiyesi olan hesaplarda
-// anlamli (Gereksinim v1, madde 9-10) - kullanicinin bankasinin kendi
-// kuruyla elle girdigi opsiyonel bir alan.
-const tryEquivalentRaw = String(formData.get("tryEquivalentAmount") || "").trim();
-const tryEquivalentAmount =
-  MULTI_CURRENCY_TYPES.includes(accountType) && currency !== "TRY" && tryEquivalentRaw
-    ? parseTLNumber(tryEquivalentRaw)
-    : null;
+// Doviz/kiymetli maden bakiyesi olan hesaplarda kur ve TL karsiligi
+  // ZORUNLUDUR: kullanici guncel kuru girer, sistem carpip toplam TL
+  // karsiligini otomatik hesaplar (bkz. account-dialog.tsx). Kur
+  // girilmeden veya carpim basarisiz olursa kayit reddedilir.
+  const needsFxRate = MULTI_CURRENCY_TYPES.includes(accountType) && currency !== "TRY";
+  const fxRateRaw = String(formData.get("fxRate") || "").trim();
+  const fxRate = fxRateRaw ? parseTLNumber(fxRateRaw) : null;
+  if (needsFxRate && (!fxRate || fxRate <= 0)) {
+    throw new Error("Doviz/kiymetli maden hesaplari icin guncel kur girilmesi zorunludur.");
+  }
+  const tryEquivalentRaw = String(formData.get("tryEquivalentAmount") || "").trim();
+  const tryEquivalentAmount =
+    needsFxRate && tryEquivalentRaw ? parseTLNumber(tryEquivalentRaw) : null;
+  if (needsFxRate && (!tryEquivalentAmount || tryEquivalentAmount <= 0)) {
+    throw new Error("TL karsiligi hesaplanamadi, lutfen bakiye ve kuru kontrol edin.");
+  }
 
 // IBAN, veritabaninda uygulama seviyesinde sifrelenir (pgcrypto).
 // Sifreleme anahtari yalnizca sunucu ortam degiskeninde (FIELD_ENCRYPTION_KEY)
@@ -87,6 +95,7 @@ const payload = {
   current_balance: accountType === "investment" ? 0 : currentBalance,
   credit_limit: creditLimit,
   try_equivalent_amount: tryEquivalentAmount,
+  fx_rate: fxRate,
   color,
 };
 
