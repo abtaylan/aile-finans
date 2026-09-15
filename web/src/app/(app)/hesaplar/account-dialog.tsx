@@ -294,6 +294,7 @@ return (
   <DialogFooter>
   <Button type="submit">{isEdit ? "Kaydet" : "Ekle"}</Button>
   </DialogFooter>
+  </form>
   </DialogContent>
   </Dialog>
   );
