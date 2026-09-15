@@ -233,6 +233,5 @@ Ekstreler
   <p className="text-base font-bold text-[var(--text-primary)]">{formatCurrency(accounts.reduce((sum, a) => sum + accountTryValue(a), 0), "TRY")}</p>
   </div>
 )}</div>
-</div>
 );
 }
